@@ -37,7 +37,7 @@ export class UserController {
 
   @Post()
   @ApiOperation({
-    summary: 'create Family user',
+    summary: 'create user',
   })
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')

@@ -83,6 +83,7 @@ export class PaymentService {
 
     // 5. Create new PaymentIntent
     const amountInCents = Math.round(plan.price * 100);
+    const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInCents,
@@ -101,6 +102,7 @@ export class PaymentService {
     if (existingPending) {
       existingPending.stripePaymentIntentId = paymentIntent.id;
       existingPending.amount = plan.price;
+      existingPending.expiryDate = expiryDate;
       await existingPending.save();
     } else {
       await this.paymentModel.create({
@@ -110,6 +112,7 @@ export class PaymentService {
         amount: plan.price,
         paymentType: 'subscription',
         status: 'pending',
+        expiryDate,
       });
     }
 

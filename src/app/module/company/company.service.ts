@@ -1,26 +1,76 @@
 import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { fileUpload } from '../../helpers/fileUploder';
+import { User, UserDocument } from '../user/entities/user.entity';
 import { CreateCompanyDto } from './dto/create-company.dto';
-import { UpdateCompanyDto } from './dto/update-company.dto';
+import { Company, CompanyDocument } from './entities/company.entity';
 
 @Injectable()
 export class CompanyService {
-  create(createCompanyDto: CreateCompanyDto) {
-    return 'This action adds a new company';
-  }
+  constructor(
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
+    @InjectModel(Company.name)
+    private readonly companyModel: Model<CompanyDocument>,
+  ) {}
 
-  findAll() {
-    return `This action returns all company`;
-  }
+  async createCompany(
+    createCompanyDto: CreateCompanyDto,
+    files?: {
+      logo?: Express.Multer.File[];
+      coverPhoto?: Express.Multer.File[];
+      cvResume?: Express.Multer.File[];
+      supportingDocuments?: Express.Multer.File[];
+    },
+  ) {
+    const user = await this.userModel.findOne({
+      email: createCompanyDto.email,
+    });
+    if (user) {
+      throw new Error('User already exists');
+    }
 
-  findOne(id: number) {
-    return `This action returns a #${id} company`;
-  }
+    const newUser = await this.userModel.create({
+      email: createCompanyDto.email,
+      role: 'care_company',
+      password: createCompanyDto.password,
+    });
 
-  update(id: number, updateCompanyDto: UpdateCompanyDto) {
-    return `This action updates a #${id} company`;
-  }
+    const logo = files?.logo?.[0];
+    if (logo) {
+      const { url } = await fileUpload.uploadToCloudinary(logo);
+      createCompanyDto.logo = url;
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} company`;
+    const coverPhoto = files?.coverPhoto?.[0];
+    if (coverPhoto) {
+      const { url } = await fileUpload.uploadToCloudinary(coverPhoto);
+      createCompanyDto.coverPhoto = url;
+    }
+
+    const cvResume = files?.cvResume?.[0];
+    if (cvResume) {
+      const { url } = await fileUpload.uploadToCloudinary(cvResume);
+      createCompanyDto.cvResume = url;
+    }
+
+    if (files?.supportingDocuments?.length) {
+      const uploadedDocuments = await Promise.all(
+        files.supportingDocuments.map((file) =>
+          fileUpload.uploadToCloudinary(file),
+        ),
+      );
+      createCompanyDto.supportingDocuments = uploadedDocuments.map(
+        (file) => file.url,
+      );
+    }
+
+    const result = await this.companyModel.create({
+      ...createCompanyDto,
+      userId: newUser._id,
+    });
+
+    return result;
   }
 }

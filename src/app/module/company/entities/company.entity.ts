@@ -54,6 +54,12 @@ export class Company {
 
   @Prop({ enum: ['approved', 'pending', 'rejected'], default: 'pending' })
   status?: string;
+
+  @Prop()
+  cvResume!: string;
+
+  @Prop()
+  supportingDocuments?: string[];
 }
 
 export const CompanySchema = SchemaFactory.createForClass(Company);

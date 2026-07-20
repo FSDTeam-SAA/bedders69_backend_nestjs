@@ -120,20 +120,6 @@ class LocationDto {
 }
 
 export class CreateCareDto {
-  @ApiPropertyOptional({
-    example: '',
-  })
-  @IsOptional()
-  @IsMongoId()
-  userId?: string;
-
-  @ApiPropertyOptional({
-    example: '',
-  })
-  @IsMongoId()
-  @IsOptional()
-  companyId?: string;
-
   @ApiProperty({
     example: 'John Smith',
   })

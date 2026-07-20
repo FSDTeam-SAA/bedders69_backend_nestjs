@@ -93,9 +93,13 @@ export class DashboardService {
         ]),
       ]);
 
+    const revenueTotal = Number(
+      (revenueResult[0] as { total?: number } | undefined)?.total ?? 0,
+    );
+
     return {
       totalUsers,
-      revenues: Number((revenueResult[0]?.total || 0).toFixed(2)),
+      revenues: Number(revenueTotal.toFixed(2)),
       activeJobs,
       pendingApprovals,
     };

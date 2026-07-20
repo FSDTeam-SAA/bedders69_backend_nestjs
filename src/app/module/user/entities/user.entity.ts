@@ -4,6 +4,27 @@ import { HydratedDocument } from 'mongoose';
 import config from '../../../config';
 export type UserDocument = HydratedDocument<User>;
 
+export const USER_ROLES = [
+  'admin',
+  'care_company',
+  'agency',
+  'carer',
+  'supplier',
+  'service_provider',
+  'family',
+] as const;
+
+export const USER_STATUSES = [
+  'pending',
+  'active',
+  'suspended',
+  'rejected',
+  'deleted',
+] as const;
+
+export type UserRole = (typeof USER_ROLES)[number];
+export type UserStatus = (typeof USER_STATUSES)[number];
+
 @Schema({ timestamps: true })
 export class User {
   @Prop({ trim: true })
@@ -25,18 +46,11 @@ export class User {
   password!: string;
 
   @Prop({
-    enum: [
-      'admin',
-      'care_company',
-      'agency',
-      'carer',
-      'supplier',
-      'service_provider',
-      'family',
-    ],
+    type: String,
+    enum: USER_ROLES,
     default: 'family',
   })
-  role!: string;
+  role!: UserRole;
 
   @Prop()
   otp?: string;
@@ -44,8 +58,8 @@ export class User {
   @Prop()
   otpExpiry?: Date;
 
-  @Prop({ enum: ['active', 'suspended'], default: 'active' })
-  status!: string;
+  @Prop({ type: String, enum: USER_STATUSES, default: 'active' })
+  status!: UserStatus;
 
   @Prop({ enum: ['male', 'female'] })
   gender?: string;

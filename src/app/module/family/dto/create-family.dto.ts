@@ -3,9 +3,11 @@ import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsEmail,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -34,6 +36,8 @@ export class CreateFamilyDto {
 
   @ApiProperty({ example: 'secret123' })
   @IsString()
+  @IsNotEmpty()
+  @MinLength(6, { message: 'Password must be at least 6 characters' })
   password!: string;
 
   @ApiProperty({ example: '+8801700000000' })

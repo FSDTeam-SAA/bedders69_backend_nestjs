@@ -46,6 +46,12 @@ export class Family {
 
   @Prop()
   profilePicture!: string;
+
+  @Prop({ enum: ['incomplete', 'complete'], default: 'incomplete' })
+  profileCompletionStatus!: string;
+
+  @Prop({ default: 0 })
+  profileCompletionPercentage!: number;
 }
 
 export const FamilySchema = SchemaFactory.createForClass(Family);

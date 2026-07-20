@@ -2,6 +2,15 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument, Types } from 'mongoose';
 
 export type CompanyDocument = HydratedDocument<Company>;
+
+const LocationSchema = new mongoose.Schema(
+  {
+    type: { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], required: true },
+  },
+  { _id: false },
+);
+
 @Schema({ timestamps: true })
 export class Company {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
@@ -25,13 +34,7 @@ export class Company {
   @Prop()
   address!: string;
 
-  @Prop({
-    type: {
-      type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number], required: true },
-    },
-    _id: false,
-  })
+  @Prop({ type: LocationSchema })
   location!: {
     type: 'Point';
     coordinates: [number, number];

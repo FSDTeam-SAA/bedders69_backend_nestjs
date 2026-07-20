@@ -13,6 +13,7 @@ import { UserModule } from './app/module/user/user.module';
 import { WebhookModule } from './app/module/webhook/webhook.module';
 import { FamilyModule } from './app/module/family/family.module';
 import { CompanyModule } from './app/module/company/company.module';
+import { CareModule } from './app/module/care/care.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CompanyModule } from './app/module/company/company.module';
     WebhookModule,
     FamilyModule,
     CompanyModule,
+    CareModule,
   ],
   controllers: [AppController],
   providers: [AppService],

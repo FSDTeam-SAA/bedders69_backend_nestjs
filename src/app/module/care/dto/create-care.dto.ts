@@ -12,6 +12,7 @@ import {
   IsOptional,
   IsString,
   Min,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -147,12 +148,13 @@ export class CreateCareDto {
   @IsEmail()
   email!: string;
 
-  @ApiPropertyOptional({
-    example: '123456',
+  @ApiProperty({
+    example: 'secret123',
   })
-  @IsOptional()
   @IsString()
-  password?: string;
+  @IsNotEmpty()
+  @MinLength(6, { message: 'Password must be at least 6 characters' })
+  password!: string;
 
   @ApiProperty({
     example: '1995-08-15',

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { fileUpload } from '../../helpers/fileUploder';
@@ -22,13 +22,19 @@ export class FamilyService {
   ) {
     const user = await this.userModel.findOne({ email: createFamilyDto.email });
     if (user) {
-      throw new Error('User already exists');
+      throw new HttpException('User already exists', HttpStatus.BAD_REQUEST);
     }
 
     const newUser = await this.userModel.create({
       email: createFamilyDto.email,
       role: 'family',
       password: createFamilyDto.password,
+      fullName: [createFamilyDto.firstName, createFamilyDto.lastName]
+        .filter(Boolean)
+        .join(' '),
+      phoneNumber: createFamilyDto.phoneNumber,
+      city: createFamilyDto.city,
+      address: createFamilyDto.street,
     });
 
     if (file) {

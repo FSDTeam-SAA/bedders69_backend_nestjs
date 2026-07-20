@@ -11,6 +11,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -100,10 +101,11 @@ export class CreateCompanyDto {
   @IsNotEmpty()
   email!: string;
 
-  @ApiPropertyOptional({ example: '123456' })
+  @ApiProperty({ example: 'secret123' })
   @IsString()
-  @IsOptional()
-  password?: string;
+  @IsNotEmpty()
+  @MinLength(6, { message: 'Password must be at least 6 characters' })
+  password!: string;
 
   @ApiProperty({ example: '+8801712345678' })
   @IsString()

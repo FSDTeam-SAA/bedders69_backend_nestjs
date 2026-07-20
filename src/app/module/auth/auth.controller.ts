@@ -20,6 +20,7 @@ import {
 import type { Request, Response } from 'express';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import AuthGuard from 'src/app/middlewares/auth.guard';
+import { USER_ROLES } from '../user/entities/user.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -94,7 +95,7 @@ export class AuthController {
   }
 
   @Post('change-password')
-  @UseGuards(AuthGuard('user', 'admin'))
+  @UseGuards(AuthGuard(...USER_ROLES))
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Change password for logged in user' })
   @ApiBody({ type: ChangePasswordDto })
@@ -103,7 +104,6 @@ export class AuthController {
     @Body() CreateAuthDto: ChangePasswordDto,
     @Req() req: Request,
   ) {
-    console.log(req.user!.id);
     const result = await this.authService.changePassword(
       req.user!.id,
       CreateAuthDto.oldPassword,

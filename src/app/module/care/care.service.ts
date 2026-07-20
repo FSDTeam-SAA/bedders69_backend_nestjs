@@ -27,6 +27,11 @@ export class CareService {
       email: createCareDto.email,
       role: 'carer',
       password: createCareDto.password,
+      fullName: createCareDto.careName,
+      phoneNumber: createCareDto.phoneNumber,
+      address: createCareDto.address,
+      dateOfBirth: createCareDto.dateOfBirth,
+      gender: createCareDto.gender,
     });
 
     if (files && files.length > 0) {

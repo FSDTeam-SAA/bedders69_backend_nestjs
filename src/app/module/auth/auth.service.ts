@@ -16,13 +16,36 @@ export class AuthService {
     private readonly jwtService: jwt.JwtService,
   ) {}
 
+  private sanitizeUser(user: unknown): Record<string, unknown> {
+    const maybeDocument = user as {
+      toObject?: () => Record<string, unknown>;
+    };
+    const plainUser =
+      typeof maybeDocument?.toObject === 'function'
+        ? maybeDocument.toObject()
+        : user;
+
+    if (!plainUser || typeof plainUser !== 'object') {
+      return {};
+    }
+
+    const safeUser = { ...(plainUser as Record<string, unknown>) };
+    delete safeUser.password;
+    delete safeUser.otp;
+    delete safeUser.otpExpiry;
+    delete safeUser.verifiedForget;
+    delete safeUser.__v;
+
+    return safeUser;
+  }
+
   async register(CreateAuthDto: CreateAuthDto) {
     const user = await this.userModel.findOne({ email: CreateAuthDto.email });
     if (user) {
       throw new HttpException('User already exists', 400);
     }
     const newUser = await this.userModel.create(CreateAuthDto);
-    return newUser;
+    return this.sanitizeUser(newUser);
   }
 
   async login(loginDto: { email: string; password: string }, res: Response) {
@@ -41,15 +64,31 @@ export class AuthService {
       throw new HttpException('Incorrect password', 401);
     }
 
+    const safeUser = this.sanitizeUser(user);
+    const status = user.status ?? safeUser?.status;
+    if (status !== 'active') {
+      throw new HttpException('Account is not active', 403);
+    }
+
     const accessToken = this.jwtService.sign(
-      { id: user._id, email: user.email, role: user.role },
+      {
+        id: user._id ?? safeUser?._id,
+        email: user.email ?? safeUser?.email,
+        role: user.role ?? safeUser?.role,
+        status,
+      },
       {
         secret: config.jwt.accessTokenSecret,
         expiresIn: config.jwt.accessTokenExpires as any,
       } as jwt.JwtSignOptions,
     );
     const refreshToken = this.jwtService.sign(
-      { id: user._id, email: user.email, role: user.role },
+      {
+        id: user._id ?? safeUser?._id,
+        email: user.email ?? safeUser?.email,
+        role: user.role ?? safeUser?.role,
+        status,
+      },
       {
         secret: config.jwt.refreshTokenSecret,
         expiresIn: config.jwt.refreshTokenExpires as any,
@@ -61,7 +100,7 @@ export class AuthService {
       sameSite: 'strict',
     });
 
-    return { accessToken, user };
+    return { accessToken, user: safeUser };
   }
 
   async forgotPassword(email: string) {

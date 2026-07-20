@@ -15,6 +15,7 @@ export interface JwtPayload {
   id: string;
   email: string;
   role: string;
+  status?: string;
   iat?: number;
   exp?: number;
 }
@@ -41,6 +42,10 @@ export default function AuthGuard(...roles: string[]): Type<CanActivate> {
         secret: config.jwt.accessTokenSecret,
       });
       if (!decoded) throw new HttpException('Unauthorized', 401);
+
+      if (decoded.status && decoded.status !== 'active') {
+        throw new HttpException('Account is not active', 403);
+      }
 
       if (roles.length && !roles.includes(decoded.role)) {
         throw new HttpException('Forbidden', 403);

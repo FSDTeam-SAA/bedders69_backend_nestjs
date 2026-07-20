@@ -235,6 +235,13 @@ Important routes:
 | Payment | `GET` | `/api/v1/payment/:id` | Public |
 | Dashboard | `GET` | `/api/v1/dashboard/overview` | Admin |
 | Dashboard | `GET` | `/api/v1/dashboard/chart` | Admin |
+| Dashboard | `GET` | `/api/v1/dashboard/users` | Admin |
+| Dashboard | `GET` | `/api/v1/dashboard/approvals` | Admin |
+| Dashboard | `GET` | `/api/v1/dashboard/jobs` | Admin |
+| Dashboard | `GET` | `/api/v1/dashboard/marketplace` | Admin |
+| Dashboard | `GET` | `/api/v1/dashboard/revenues` | Admin |
+| Dashboard | `POST` | `/api/v1/dashboard/coupons` | Admin |
+| Dashboard | `GET` | `/api/v1/dashboard/coupons` | Admin |
 | Webhook | `POST` | `/api/v1/webhook` | Stripe |
 
 For exact request bodies, open Swagger:

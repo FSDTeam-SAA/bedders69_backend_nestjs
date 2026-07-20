@@ -6,6 +6,9 @@ export type UserDocument = HydratedDocument<User>;
 
 @Schema({ timestamps: true })
 export class User {
+  @Prop({ trim: true })
+  fullName!: string;
+
   @Prop({
     required: [true, 'Email is required'],
     unique: true,
@@ -43,6 +46,27 @@ export class User {
 
   @Prop({ enum: ['active', 'suspended'], default: 'active' })
   status!: string;
+
+  @Prop({ enum: ['male', 'female'] })
+  gender?: string;
+
+  @Prop()
+  phoneNumber?: string;
+
+  @Prop()
+  profilePicture?: string;
+
+  @Prop()
+  country?: string;
+
+  @Prop()
+  city?: string;
+
+  @Prop()
+  address?: string;
+
+  @Prop()
+  dateOfBirth?: Date;
 
   @Prop()
   verifiedForget!: boolean;

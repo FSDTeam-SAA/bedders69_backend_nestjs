@@ -18,6 +18,7 @@ import { CouponModule } from './app/module/coupon/coupon.module';
 import { ServiceModule } from './app/module/service/service.module';
 import { ProductCategoryModule } from './app/module/product-category/product-category.module';
 import { ProductModule } from './app/module/product/product.module';
+import { CareModule } from './app/module/care/care.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { ProductModule } from './app/module/product/product.module';
     ServiceModule,
     ProductCategoryModule,
     ProductModule,
+    CareModule,
   ],
   controllers: [AppController],
   providers: [AppService],

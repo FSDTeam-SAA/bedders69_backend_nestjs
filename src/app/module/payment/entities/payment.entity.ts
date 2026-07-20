@@ -26,6 +26,9 @@ export class Payment {
 
   @Prop()
   stripePaymentIntentId!: string;
+
+  @Prop()
+  expiryDate?: Date;
 }
 
 export const PaymentSchema = SchemaFactory.createForClass(Payment);

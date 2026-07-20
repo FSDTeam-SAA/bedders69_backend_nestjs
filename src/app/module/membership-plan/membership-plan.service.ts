@@ -1,0 +1,58 @@
+import { HttpException, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { CreateMembershipPlanDto } from './dto/create-membership-plan.dto';
+import { UpdateMembershipPlanDto } from './dto/update-membership-plan.dto';
+import {
+  MembershipPlan,
+  MembershipPlanDocument,
+} from './entities/membership-plan.entity';
+
+@Injectable()
+export class MembershipPlanService {
+  constructor(
+    @InjectModel(MembershipPlan.name)
+    private readonly membershipPlanModel: Model<MembershipPlanDocument>,
+  ) {}
+
+  async create(createMembershipPlanDto: CreateMembershipPlanDto) {
+    const existingPlan = await this.membershipPlanModel.findOne({
+      title: createMembershipPlanDto.title,
+      duration: createMembershipPlanDto.duration,
+    });
+
+    if (existingPlan) {
+      throw new HttpException('Membership plan already exists', 400);
+    }
+
+    return this.membershipPlanModel.create(createMembershipPlanDto);
+  }
+
+  async findAll() {
+    return this.membershipPlanModel.find().sort({ createdAt: -1 });
+  }
+
+  async update(id: string, updateMembershipPlanDto: UpdateMembershipPlanDto) {
+    const result = await this.membershipPlanModel.findByIdAndUpdate(
+      id,
+      updateMembershipPlanDto,
+      { new: true },
+    );
+
+    if (!result) {
+      throw new HttpException('Membership plan not found', 404);
+    }
+
+    return result;
+  }
+
+  async remove(id: string) {
+    const result = await this.membershipPlanModel.findByIdAndDelete(id);
+
+    if (!result) {
+      throw new HttpException('Membership plan not found', 404);
+    }
+
+    return result;
+  }
+}

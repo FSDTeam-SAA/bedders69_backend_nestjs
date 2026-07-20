@@ -58,6 +58,12 @@ export class Company {
   @Prop({ enum: ['approved', 'pending', 'rejected'], default: 'pending' })
   status?: string;
 
+  @Prop({ enum: ['incomplete', 'complete'], default: 'incomplete' })
+  profileCompletionStatus!: string;
+
+  @Prop({ default: 0 })
+  profileCompletionPercentage!: number;
+
   @Prop()
   cvResume!: string;
 

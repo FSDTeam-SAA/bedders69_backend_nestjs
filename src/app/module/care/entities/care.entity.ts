@@ -82,6 +82,12 @@ export class Care {
   @Prop({ default: false })
   isActive!: boolean;
 
+  @Prop({ enum: ['incomplete', 'complete'], default: 'incomplete' })
+  profileCompletionStatus!: string;
+
+  @Prop({ default: 0 })
+  profileCompletionPercentage!: number;
+
   @Prop({ default: 0 })
   profileViews!: number;
 

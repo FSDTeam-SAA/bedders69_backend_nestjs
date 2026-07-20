@@ -3,14 +3,93 @@ import { CompanyService } from './company.service';
 
 const buildCompanyModel = () => ({
   create: jest.fn(),
+  findOne: jest.fn(),
+  findOneAndUpdate: jest.fn(),
 });
 
 const buildUserModel = () => ({
   findOne: jest.fn(),
   create: jest.fn(),
+  findByIdAndUpdate: jest.fn(),
 });
 
 describe('CompanyService', () => {
+  it('gets the authenticated company profile by user id', async () => {
+    const userModel = buildUserModel();
+    const companyModel = buildCompanyModel();
+    companyModel.findOne.mockResolvedValue({
+      _id: 'company-id',
+      userId: 'user-id',
+      email: 'company@example.com',
+    });
+    const service = new CompanyService(userModel as any, companyModel as any);
+
+    const result = await service.getMyProfile('user-id');
+
+    expect(companyModel.findOne).toHaveBeenCalledWith({ userId: 'user-id' });
+    expect(result).toMatchObject({
+      _id: 'company-id',
+      userId: 'user-id',
+      email: 'company@example.com',
+    });
+  });
+
+  it('throws not found when authenticated company profile is missing', async () => {
+    const userModel = buildUserModel();
+    const companyModel = buildCompanyModel();
+    companyModel.findOne.mockResolvedValue(null);
+    const service = new CompanyService(userModel as any, companyModel as any);
+
+    await expect(service.getMyProfile('missing-user-id')).rejects.toMatchObject(
+      {
+        message: 'Care company profile not found',
+        status: 404,
+      },
+    );
+  });
+
+  it('updates the authenticated company profile and linked user metadata', async () => {
+    const userModel = buildUserModel();
+    const companyModel = buildCompanyModel();
+    companyModel.findOne.mockResolvedValue({
+      _id: 'company-id',
+      userId: 'user-id',
+      email: 'company@example.com',
+    });
+    companyModel.findOneAndUpdate.mockResolvedValue({
+      _id: 'company-id',
+      userId: 'user-id',
+      companyName: 'Updated Care Ltd',
+      phoneNumber: '+447700900999',
+      address: 'New Address',
+    });
+    const service = new CompanyService(userModel as any, companyModel as any);
+
+    const result = await service.updateMyProfile('user-id', {
+      companyName: 'Updated Care Ltd',
+      phoneNumber: '+447700900999',
+      address: 'New Address',
+    });
+
+    expect(companyModel.findOneAndUpdate).toHaveBeenCalledWith(
+      { userId: 'user-id' },
+      expect.objectContaining({
+        companyName: 'Updated Care Ltd',
+      }),
+      { new: true },
+    );
+    expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith('user-id', {
+      fullName: 'Updated Care Ltd',
+      phoneNumber: '+447700900999',
+      address: 'New Address',
+    });
+    expect(result).toMatchObject({
+      _id: 'company-id',
+      userId: 'user-id',
+      companyName: 'Updated Care Ltd',
+    });
+  });
+
   it('creates a linked company user with basic profile metadata', async () => {
     const userModel = buildUserModel();
     const companyModel = buildCompanyModel();

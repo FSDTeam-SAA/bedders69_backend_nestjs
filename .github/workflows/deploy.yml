@@ -1,13 +1,6 @@
 # ============================================================
 # GitHub Actions: CI/CD Docker Deploy
 # ============================================================
-# Ei workflow push to main hole:
-# 1. npm install
-# 2. build/lint/test run kore (With localized CI MongoDB Service)
-# 3. Docker image build kore Docker Hub-e push kore
-# 4. VPS-e SSH kore latest image pull + restart kore
-# ============================================================
-
 name: CI/CD Docker Deploy
 
 on:
@@ -20,7 +13,8 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: 20
+  # Upgraded node environment to match modern GitHub Actions runtime rules securely
+  NODE_VERSION: 22
   DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME || 'nestjs-boilerplate-mongodb' }}
   APP_DIR: ${{ vars.APP_DIR || '/opt/nestjs-boilerplate-mongodb' }}
   APP_PORT: ${{ vars.APP_PORT || '5000' }}
@@ -34,7 +28,6 @@ jobs:
     name: Build, Lint, And Test
     runs-on: ubuntu-latest
 
-    # Spins up an isolated database instance so NestJS E2E suites can run safely
     services:
       mongodb:
         image: mongo:6.0
@@ -131,7 +124,6 @@ jobs:
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
 
-            # Create clean production runtime configuration file
             cat > .env << 'ENVEOF'
             NODE_ENV=production
             PORT=${{ env.CONTAINER_PORT }}
@@ -171,7 +163,6 @@ jobs:
             APP_CONTAINER_NAME=${{ vars.APP_CONTAINER_NAME || 'nestjs_boilerplate_api' }}
             ENVEOF
 
-            # Write out Docker compose mapping explicitly using runtime values populated by env_file
             cat > docker-compose.yml << 'COMPOSEEOF'
             services:
               app:
@@ -196,11 +187,9 @@ jobs:
                 driver: bridge
             COMPOSEEOF
 
-            # Pull and securely drop current containers to deploy updates
             docker pull "$IMAGE"
             docker compose down --remove-orphans
             docker compose up -d
 
-            # Clean cache build storage on the VPS
             docker image prune -f
             docker compose ps

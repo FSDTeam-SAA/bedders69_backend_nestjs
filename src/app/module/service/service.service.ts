@@ -12,10 +12,7 @@ export class ServiceService {
     private readonly serviceModel: Model<ServiceDocument>,
   ) {}
 
-  async create(
-    createServiceDto: CreateServiceDto,
-    serviceProviderId: string,
-  ) {
+  async create(createServiceDto: CreateServiceDto, serviceProviderId: string) {
     return this.serviceModel.create({
       ...createServiceDto,
       serviceProviderId,
@@ -68,6 +65,8 @@ export class ServiceService {
   }
 
   async getByProviderId(serviceProviderId: string) {
-    return this.serviceModel.find({ serviceProviderId }).sort({ createdAt: -1 });
+    return this.serviceModel
+      .find({ serviceProviderId })
+      .sort({ createdAt: -1 });
   }
 }

@@ -10,12 +10,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import AuthGuard from 'src/app/middlewares/auth.guard';
 import { CreateMembershipPlanDto } from './dto/create-membership-plan.dto';
 import { UpdateMembershipPlanDto } from './dto/update-membership-plan.dto';
@@ -24,9 +19,7 @@ import { MembershipPlanService } from './membership-plan.service';
 @ApiTags('membership-plan')
 @Controller('membership-plans')
 export class MembershipPlanController {
-  constructor(
-    private readonly membershipPlanService: MembershipPlanService,
-  ) {}
+  constructor(private readonly membershipPlanService: MembershipPlanService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create membership plan' })
@@ -35,8 +28,9 @@ export class MembershipPlanController {
   @UseGuards(AuthGuard('admin'))
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createMembershipPlanDto: CreateMembershipPlanDto) {
-    const result =
-      await this.membershipPlanService.create(createMembershipPlanDto);
+    const result = await this.membershipPlanService.create(
+      createMembershipPlanDto,
+    );
 
     return {
       message: 'Membership plan created successfully',

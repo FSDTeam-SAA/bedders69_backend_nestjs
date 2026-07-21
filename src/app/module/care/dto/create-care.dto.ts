@@ -73,6 +73,27 @@ const parseNumber = (value: unknown): unknown => {
   return value;
 };
 
+const parseJsonArray = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  if (value.trim() === '') {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : value;
+  } catch {
+    return value;
+  }
+};
+
 const parseLocation = (value: unknown): unknown => {
   let location: unknown;
 
@@ -118,6 +139,35 @@ class LocationDto {
   @IsArray()
   @IsNumber({}, { each: true })
   coordinates!: [number, number];
+}
+
+class ExperienceDto {
+  @ApiPropertyOptional({ example: 'Bedders Care Ltd' })
+  @IsOptional()
+  @IsString()
+  companyName?: string;
+
+  @ApiPropertyOptional({ example: 'Care Assistant' })
+  @IsOptional()
+  @IsString()
+  jobTitle?: string;
+
+  @ApiPropertyOptional({ example: '2022-01-01', format: 'date' })
+  @IsOptional()
+  @IsDateString()
+  startDate?: Date;
+
+  @ApiPropertyOptional({ example: '2024-01-01', format: 'date' })
+  @IsOptional()
+  @IsDateString()
+  endDate?: Date;
+
+  @ApiPropertyOptional({
+    example: 'Supported elderly clients with daily care.',
+  })
+  @IsOptional()
+  @IsString()
+  responsibilities?: string;
 }
 
 export class CreateCareDto {
@@ -170,27 +220,32 @@ export class CreateCareDto {
   @IsEnum(['male', 'female'])
   gender!: 'male' | 'female';
 
-  @ApiPropertyOptional({
-    example: true,
-  })
-  @IsOptional()
-  @Transform(({ value }) => parseBoolean(value))
-  @IsBoolean()
-  hasDrivingLicense?: boolean;
-
-  @ApiPropertyOptional({
-    example: true,
-  })
-  @IsOptional()
-  @Transform(({ value }) => parseBoolean(value))
-  @IsBoolean()
-  hasVehicle?: boolean;
-
   @ApiProperty({
     example: '123 High Street, London',
   })
   @IsString()
   address!: string;
+
+  @ApiPropertyOptional({
+    example: 'United Kingdom',
+  })
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiPropertyOptional({
+    example: 'England',
+  })
+  @IsOptional()
+  @IsString()
+  region?: string;
+
+  @ApiPropertyOptional({
+    example: 'British',
+  })
+  @IsOptional()
+  @IsString()
+  nationality?: string;
 
   @ApiProperty({
     example: 'SW1A 1AA',
@@ -205,12 +260,6 @@ export class CreateCareDto {
   @ValidateNested()
   @Type(() => LocationDto)
   location!: LocationDto;
-
-  @ApiProperty({
-    example: 'Day',
-  })
-  @IsString()
-  shifts!: string;
 
   @ApiPropertyOptional({
     example: ['Dementia Care', 'Personal Care'],
@@ -231,6 +280,30 @@ export class CreateCareDto {
   yearsOfExperience?: number;
 
   @ApiPropertyOptional({
+    example: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseBoolean(value))
+  @IsBoolean()
+  rightToWorkInUk?: boolean;
+
+  @ApiPropertyOptional({
+    example: 'Experienced carer with dementia and personal care background.',
+  })
+  @IsOptional()
+  @IsString()
+  professionalSummary?: string;
+
+  @ApiPropertyOptional({
+    type: [ExperienceDto],
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseJsonArray(value))
+  @ValidateNested({ each: true })
+  @Type(() => ExperienceDto)
+  experience?: ExperienceDto[];
+
+  @ApiPropertyOptional({
     example: ['First Aid', 'Medication Assistance'],
   })
   @IsOptional()
@@ -238,6 +311,69 @@ export class CreateCareDto {
   @IsArray()
   @IsString({ each: true })
   skills?: string[];
+
+  @ApiPropertyOptional({
+    example: ['Live-in care', 'Night care'],
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseStringArray(value))
+  @IsArray()
+  @IsString({ each: true })
+  workPreferences?: string[];
+
+  @ApiPropertyOptional({
+    example: 'Immediate',
+  })
+  @IsOptional()
+  @IsString()
+  currentAvailability?: string;
+
+  @ApiPropertyOptional({
+    example: 'London, South East',
+  })
+  @IsOptional()
+  @IsString()
+  preferredRegions?: string;
+
+  @ApiPropertyOptional({
+    example: 'London, Croydon',
+  })
+  @IsOptional()
+  @IsString()
+  preferredCities?: string;
+
+  @ApiPropertyOptional({
+    example: '25 miles',
+  })
+  @IsOptional()
+  @IsString()
+  maximumTravelDistance?: string;
+
+  @ApiPropertyOptional({
+    example: ['Full-time', 'Part-time'],
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseStringArray(value))
+  @IsArray()
+  @IsString({ each: true })
+  preferredWorkType?: string[];
+
+  @ApiPropertyOptional({
+    example: ['Day', 'Night'],
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseStringArray(value))
+  @IsArray()
+  @IsString({ each: true })
+  preferredShift?: string[];
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+  })
+  @IsOptional()
+  @IsString()
+  cv?: string;
 
   @ApiPropertyOptional({
     type: 'array',
@@ -259,14 +395,6 @@ export class CreateCareDto {
   @Transform(({ value }) => parseBoolean(value))
   @IsBoolean()
   isPremium?: boolean;
-
-  @ApiPropertyOptional({
-    example: false,
-  })
-  @IsOptional()
-  @Transform(({ value }) => parseBoolean(value))
-  @IsBoolean()
-  isFeatured?: boolean;
 
   @ApiPropertyOptional({
     example: true,

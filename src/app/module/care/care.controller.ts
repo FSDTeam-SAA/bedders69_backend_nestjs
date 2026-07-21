@@ -11,7 +11,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -37,11 +37,26 @@ export class CareController {
   @Post()
   @ApiOperation({ summary: 'Create a new care' })
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(AnyFilesInterceptor(fileUpload.uploadConfig))
+  @ApiBody({ type: CreateCareDto })
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'profilePicture', maxCount: 1 },
+        { name: 'cv', maxCount: 1 },
+        { name: 'documents', maxCount: 10 },
+      ],
+      fileUpload.uploadConfig,
+    ),
+  )
   @HttpCode(HttpStatus.CREATED)
   async createCare(
     @Body() createCareDto: CreateCareDto,
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFiles()
+    files?: {
+      profilePicture?: Express.Multer.File[];
+      cv?: Express.Multer.File[];
+      documents?: Express.Multer.File[];
+    },
   ) {
     const result = await this.careService.createCare(createCareDto, files);
     return {
@@ -113,12 +128,26 @@ export class CareController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiNotFoundResponse({ description: 'Carer profile not found' })
-  @UseInterceptors(AnyFilesInterceptor(fileUpload.uploadConfig))
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'profilePicture', maxCount: 1 },
+        { name: 'cv', maxCount: 1 },
+        { name: 'documents', maxCount: 10 },
+      ],
+      fileUpload.uploadConfig,
+    ),
+  )
   @HttpCode(HttpStatus.OK)
   async updateMyProfile(
     @Req() req: Request,
     @Body() updateCareDto: UpdateCareDto,
-    @UploadedFiles() files?: Express.Multer.File[],
+    @UploadedFiles()
+    files?: {
+      profilePicture?: Express.Multer.File[];
+      cv?: Express.Multer.File[];
+      documents?: Express.Multer.File[];
+    },
   ) {
     const result = await this.careService.updateMyProfile(
       req.user!.id,

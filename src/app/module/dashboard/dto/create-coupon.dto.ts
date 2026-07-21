@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { CouponValidity } from '../entities/coupon.entity';
 
-export class CreateCouponDto {
+export class CreateDashboardCouponDto {
   @ApiProperty({ example: 'Summer Discount' })
   @IsString()
   couponName!: string;

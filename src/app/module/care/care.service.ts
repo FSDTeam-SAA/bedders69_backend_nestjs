@@ -7,6 +7,12 @@ import { CreateCareDto } from './dto/create-care.dto';
 import { UpdateCareDto } from './dto/update-care.dto';
 import { Care, CareDocument } from './entities/care.entity';
 
+type CareUploadFiles = {
+  profilePicture?: Express.Multer.File[];
+  cv?: Express.Multer.File[];
+  documents?: Express.Multer.File[];
+};
+
 @Injectable()
 export class CareService {
   constructor(
@@ -22,6 +28,7 @@ export class CareService {
       'address',
       'postCode',
       'shifts',
+      'location',
     ];
     const completedFields = requiredFields.filter((field) => {
       const value = values[field];
@@ -38,10 +45,27 @@ export class CareService {
     };
   }
 
-  async createCare(
-    createCareDto: CreateCareDto,
-    files?: Express.Multer.File[],
-  ) {
+  private async uploadSingleFile(file?: Express.Multer.File) {
+    if (!file) {
+      return undefined;
+    }
+
+    const { url } = await fileUpload.uploadToCloudinary(file);
+    return url;
+  }
+
+  private async uploadMultipleFiles(files?: Express.Multer.File[]) {
+    if (!files?.length) {
+      return undefined;
+    }
+
+    const uploadedFiles = await Promise.all(
+      files.map((file) => fileUpload.uploadToCloudinary(file)),
+    );
+    return uploadedFiles.map((file) => file.url);
+  }
+
+  async createCare(createCareDto: CreateCareDto, files?: CareUploadFiles) {
     const user = await this.userModel.findOne({
       email: createCareDto.email,
     });
@@ -60,31 +84,30 @@ export class CareService {
       gender: createCareDto.gender,
     });
 
-    if (files && files.length > 0) {
-      const profilePicture = files.find(
-        (file) => file.fieldname === 'profilePicture',
-      );
-      if (profilePicture) {
-        const { url } = await fileUpload.uploadToCloudinary(profilePicture);
-        createCareDto.profilePicture = url;
-      }
-
-      const documents = files.filter((file) => file.fieldname === 'documents');
-      if (documents && documents.length > 0) {
-        const urls = await Promise.all(
-          documents.map(async (document) => {
-            const { url } = await fileUpload.uploadToCloudinary(document);
-            return url;
-          }),
-        );
-        createCareDto.documents = urls;
-      }
+    const profilePicture = await this.uploadSingleFile(
+      files?.profilePicture?.[0],
+    );
+    if (profilePicture) {
+      createCareDto.profilePicture = profilePicture;
     }
 
+    const cv = await this.uploadSingleFile(files?.cv?.[0]);
+    if (cv) {
+      createCareDto.cv = cv;
+    }
+
+    const documents = await this.uploadMultipleFiles(files?.documents);
+    if (documents) {
+      createCareDto.documents = documents;
+    }
+
+    const carePayload: Partial<CreateCareDto> = { ...createCareDto };
+    delete carePayload.password;
+
     const care = await this.careModel.create({
-      ...createCareDto,
+      ...carePayload,
       userId: newUser._id,
-      ...this.getCompletion({ ...createCareDto }),
+      ...this.getCompletion({ ...carePayload }),
     });
 
     return care;
@@ -102,58 +125,66 @@ export class CareService {
   async updateMyProfile(
     userId: string,
     updateCareDto: UpdateCareDto,
-    files?: Express.Multer.File[],
+    files?: CareUploadFiles,
   ) {
     const currentCare = await this.getMyProfile(userId);
 
-    if (files && files.length > 0) {
-      const profilePicture = files.find(
-        (file) => file.fieldname === 'profilePicture',
-      );
-      if (profilePicture) {
-        const { url } = await fileUpload.uploadToCloudinary(profilePicture);
-        updateCareDto.profilePicture = url;
-      }
-
-      const documents = files.filter((file) => file.fieldname === 'documents');
-      if (documents.length > 0) {
-        const urls = await Promise.all(
-          documents.map(async (document) => {
-            const { url } = await fileUpload.uploadToCloudinary(document);
-            return url;
-          }),
-        );
-        updateCareDto.documents = urls;
-      }
+    const profilePicture = await this.uploadSingleFile(
+      files?.profilePicture?.[0],
+    );
+    if (profilePicture) {
+      updateCareDto.profilePicture = profilePicture;
     }
+
+    const cv = await this.uploadSingleFile(files?.cv?.[0]);
+    if (cv) {
+      updateCareDto.cv = cv;
+    }
+
+    const documents = await this.uploadMultipleFiles(files?.documents);
+    if (documents) {
+      updateCareDto.documents = documents;
+    }
+
+    const carePayload: UpdateCareDto = { ...updateCareDto };
+    delete carePayload.password;
 
     const updatedCare = await this.careModel.findOneAndUpdate(
       { userId },
       {
-        ...updateCareDto,
+        ...carePayload,
         ...this.getCompletion({
           ...currentCare.toObject?.(),
-          ...updateCareDto,
+          ...carePayload,
         }),
       },
       { new: true },
     );
 
     const linkedUserUpdate: Record<string, unknown> = {};
-    if (updateCareDto.careName) {
-      linkedUserUpdate.fullName = updateCareDto.careName;
+    if (carePayload.careName) {
+      linkedUserUpdate.fullName = carePayload.careName;
     }
-    if (updateCareDto.phoneNumber) {
-      linkedUserUpdate.phoneNumber = updateCareDto.phoneNumber;
+    if (carePayload.phoneNumber) {
+      linkedUserUpdate.phoneNumber = carePayload.phoneNumber;
     }
-    if (updateCareDto.address) {
-      linkedUserUpdate.address = updateCareDto.address;
+    if (carePayload.address) {
+      linkedUserUpdate.address = carePayload.address;
     }
-    if (updateCareDto.dateOfBirth) {
-      linkedUserUpdate.dateOfBirth = updateCareDto.dateOfBirth;
+    if (carePayload.dateOfBirth) {
+      linkedUserUpdate.dateOfBirth = carePayload.dateOfBirth;
     }
-    if (updateCareDto.gender) {
-      linkedUserUpdate.gender = updateCareDto.gender;
+    if (carePayload.gender) {
+      linkedUserUpdate.gender = carePayload.gender;
+    }
+    if (carePayload.profilePicture) {
+      linkedUserUpdate.profilePicture = carePayload.profilePicture;
+    }
+    if (carePayload.country) {
+      linkedUserUpdate.country = carePayload.country;
+    }
+    if (carePayload.email) {
+      linkedUserUpdate.email = carePayload.email;
     }
 
     if (Object.keys(linkedUserUpdate).length) {

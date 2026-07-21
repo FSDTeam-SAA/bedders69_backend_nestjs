@@ -32,6 +32,15 @@ const buildPaymentModel = () => ({
   findOne: jest.fn(),
 });
 
+const buildEntitlementModel = () => ({
+  findOne: jest.fn(),
+  updateMany: jest.fn(),
+});
+
+const buildPackageModel = () => ({
+  findById: jest.fn(),
+});
+
 const buildFindChain = (items: unknown[]) => ({
   select: jest.fn().mockReturnThis(),
   skip: jest.fn().mockReturnThis(),
@@ -40,14 +49,39 @@ const buildFindChain = (items: unknown[]) => ({
   lean: jest.fn().mockResolvedValue(items),
 });
 
+const makeProfileService = (overrides: Record<string, unknown> = {}) => {
+  const defaults = {
+    userModel: buildUserModel(),
+    organizationProfileModel: buildOrganizationProfileModel(),
+    auditLogModel: buildAuditLogModel(),
+    familyModel: buildProfileModel(),
+    companyModel: buildProfileModel(),
+    careModel: buildProfileModel(),
+    paymentModel: buildPaymentModel(),
+    entitlementModel: buildEntitlementModel(),
+    packageModel: buildPackageModel(),
+  };
+  const models = { ...defaults, ...overrides };
+  return {
+    service: new ProfileService(
+      models.userModel as any,
+      models.organizationProfileModel as any,
+      models.auditLogModel as any,
+      models.familyModel as any,
+      models.companyModel as any,
+      models.careModel as any,
+      models.paymentModel as any,
+      models.entitlementModel as any,
+      models.packageModel as any,
+    ),
+    ...models,
+  };
+};
+
 describe('ProfileService', () => {
   it('creates a linked recruitment agency profile with completion status', async () => {
-    const userModel = buildUserModel();
-    const organizationProfileModel = buildOrganizationProfileModel();
-    const auditLogModel = buildAuditLogModel();
-    const familyModel = buildProfileModel();
-    const companyModel = buildProfileModel();
-    const careModel = buildProfileModel();
+    const { service, userModel, organizationProfileModel } =
+      makeProfileService();
     userModel.findOne.mockResolvedValue(null);
     userModel.create.mockResolvedValue({ _id: 'new-user-id' });
     organizationProfileModel.create.mockResolvedValue({
@@ -56,15 +90,6 @@ describe('ProfileService', () => {
       profileType: 'agency',
       profileCompletionStatus: 'complete',
     });
-    const service = new ProfileService(
-      userModel as any,
-      organizationProfileModel as any,
-      auditLogModel as any,
-      familyModel as any,
-      companyModel as any,
-      careModel as any,
-      buildPaymentModel() as any,
-    );
 
     const result = await service.createOrganizationProfile('agency', {
       profileType: 'agency',
@@ -104,15 +129,7 @@ describe('ProfileService', () => {
   });
 
   it('rejects organization profile type mismatch', async () => {
-    const service = new ProfileService(
-      buildUserModel() as any,
-      buildOrganizationProfileModel() as any,
-      buildAuditLogModel() as any,
-      buildProfileModel() as any,
-      buildProfileModel() as any,
-      buildProfileModel() as any,
-      buildPaymentModel() as any,
-    );
+    const { service } = makeProfileService();
 
     await expect(
       service.createOrganizationProfile('agency', {
@@ -128,12 +145,8 @@ describe('ProfileService', () => {
   });
 
   it('approves a profile and writes an audit log', async () => {
-    const userModel = buildUserModel();
-    const organizationProfileModel = buildOrganizationProfileModel();
-    const auditLogModel = buildAuditLogModel();
-    const familyModel = buildProfileModel();
-    const companyModel = buildProfileModel();
-    const careModel = buildProfileModel();
+    const { service, userModel, organizationProfileModel, auditLogModel } =
+      makeProfileService();
     const targetUser = {
       _id: 'target-user-id',
       role: 'agency',
@@ -141,15 +154,6 @@ describe('ProfileService', () => {
       save: jest.fn().mockResolvedValue(undefined),
     };
     userModel.findById.mockResolvedValue(targetUser);
-    const service = new ProfileService(
-      userModel as any,
-      organizationProfileModel as any,
-      auditLogModel as any,
-      familyModel as any,
-      companyModel as any,
-      careModel as any,
-      buildPaymentModel() as any,
-    );
 
     const result = await service.updateProfileStatus(
       'approve-profile',
@@ -185,12 +189,7 @@ describe('ProfileService', () => {
   });
 
   it('searches approved public care companies without private fields', async () => {
-    const userModel = buildUserModel();
-    const organizationProfileModel = buildOrganizationProfileModel();
-    const auditLogModel = buildAuditLogModel();
-    const familyModel = buildProfileModel();
-    const companyModel = buildProfileModel();
-    const careModel = buildProfileModel();
+    const { service, companyModel } = makeProfileService();
     companyModel.countDocuments.mockResolvedValue(1);
     companyModel.find.mockReturnValue(
       buildFindChain([
@@ -204,15 +203,6 @@ describe('ProfileService', () => {
           status: 'approved',
         },
       ]),
-    );
-    const service = new ProfileService(
-      userModel as any,
-      organizationProfileModel as any,
-      auditLogModel as any,
-      familyModel as any,
-      companyModel as any,
-      careModel as any,
-      buildPaymentModel() as any,
     );
 
     const result = await service.searchCareCompanies(
@@ -231,10 +221,9 @@ describe('ProfileService', () => {
     expect(result.data[0]).not.toHaveProperty('supportingDocuments');
   });
 
-  it('denies restricted carer search when requester has no active paid package', async () => {
-    const userModel = buildUserModel();
-    const organizationProfileModel = buildOrganizationProfileModel();
-    const paymentModel = buildPaymentModel();
+  it('denies restricted carer search when requester has no active entitlement', async () => {
+    const { service, userModel, organizationProfileModel, entitlementModel } =
+      makeProfileService();
     userModel.findById.mockReturnValue({
       select: jest.fn().mockReturnThis(),
       lean: jest.fn().mockResolvedValue({
@@ -247,16 +236,10 @@ describe('ProfileService', () => {
       _id: 'approved-profile-id',
       status: 'approved',
     });
-    paymentModel.findOne.mockResolvedValue(null);
-    const service = new ProfileService(
-      userModel as any,
-      organizationProfileModel as any,
-      buildAuditLogModel() as any,
-      buildProfileModel() as any,
-      buildProfileModel() as any,
-      buildProfileModel() as any,
-      paymentModel as any,
-    );
+    entitlementModel.updateMany.mockResolvedValue(undefined);
+    entitlementModel.findOne.mockReturnValue({
+      populate: jest.fn().mockResolvedValue(null),
+    });
 
     await expect(
       service.searchRestrictedCarers(
@@ -265,16 +248,14 @@ describe('ProfileService', () => {
         { page: 1, limit: 10 },
       ),
     ).rejects.toMatchObject({
-      message: 'Restricted carer directory requires an active paid package',
+      message: 'Restricted carer directory requires an active paid membership',
       status: 403,
     });
   });
 
-  it('searches restricted carers for paid approved organizations', async () => {
-    const userModel = buildUserModel();
-    const organizationProfileModel = buildOrganizationProfileModel();
-    const paymentModel = buildPaymentModel();
-    const careModel = buildProfileModel();
+  it('denies restricted carer search when entitlement is for wrong package type', async () => {
+    const { service, userModel, organizationProfileModel, entitlementModel } =
+      makeProfileService();
     userModel.findById.mockReturnValue({
       select: jest.fn().mockReturnThis(),
       lean: jest.fn().mockResolvedValue({
@@ -287,7 +268,56 @@ describe('ProfileService', () => {
       _id: 'approved-profile-id',
       status: 'approved',
     });
-    paymentModel.findOne.mockResolvedValue({ _id: 'payment-id' });
+    entitlementModel.updateMany.mockResolvedValue(undefined);
+    entitlementModel.findOne.mockReturnValue({
+      populate: jest.fn().mockResolvedValue({
+        _id: 'entitlement-id',
+        status: 'active',
+        package: { _id: 'pkg-id', type: 'job_posting' },
+      }),
+    });
+
+    await expect(
+      service.searchRestrictedCarers(
+        'requester-id',
+        {},
+        { page: 1, limit: 10 },
+      ),
+    ).rejects.toMatchObject({
+      message:
+        'Restricted carer directory requires an active membership package',
+      status: 403,
+    });
+  });
+
+  it('searches restricted carers for paid approved organizations with membership entitlement', async () => {
+    const {
+      service,
+      userModel,
+      organizationProfileModel,
+      entitlementModel,
+      careModel,
+    } = makeProfileService();
+    userModel.findById.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      lean: jest.fn().mockResolvedValue({
+        _id: 'requester-id',
+        role: 'agency',
+        status: 'active',
+      }),
+    });
+    organizationProfileModel.findOne.mockResolvedValue({
+      _id: 'approved-profile-id',
+      status: 'approved',
+    });
+    entitlementModel.updateMany.mockResolvedValue(undefined);
+    entitlementModel.findOne.mockReturnValue({
+      populate: jest.fn().mockResolvedValue({
+        _id: 'entitlement-id',
+        status: 'active',
+        package: { _id: 'pkg-id', type: 'membership' },
+      }),
+    });
     careModel.countDocuments.mockResolvedValue(1);
     careModel.find.mockReturnValue(
       buildFindChain([
@@ -301,15 +331,6 @@ describe('ProfileService', () => {
           isActive: true,
         },
       ]),
-    );
-    const service = new ProfileService(
-      userModel as any,
-      organizationProfileModel as any,
-      buildAuditLogModel() as any,
-      buildProfileModel() as any,
-      buildProfileModel() as any,
-      careModel as any,
-      paymentModel as any,
     );
 
     const result = await service.searchRestrictedCarers(

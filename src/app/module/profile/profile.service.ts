@@ -28,6 +28,11 @@ import {
   ProfileAuditLog,
   ProfileAuditLogDocument,
 } from './entities/profile-audit-log.entity';
+import {
+  Entitlement,
+  EntitlementDocument,
+} from '../entitlement/entities/entitlement.entity';
+import { Package, PackageDocument } from '../package/entities/package.entity';
 
 const PROFILE_ROLE_LABELS: Record<string, string> = {
   agency: 'Recruitment agency',
@@ -59,6 +64,10 @@ export class ProfileService {
     private readonly careModel: Model<CareDocument>,
     @InjectModel(Payment.name)
     private readonly paymentModel: Model<PaymentDocument>,
+    @InjectModel(Entitlement.name)
+    private readonly entitlementModel: Model<EntitlementDocument>,
+    @InjectModel(Package.name)
+    private readonly packageModel: Model<PackageDocument>,
   ) {}
 
   private normalizeProfileType(profileType: OrganizationProfileType): UserRole {
@@ -495,18 +504,25 @@ export class ProfileService {
       }
     }
 
-    const activePayment = await this.paymentModel.findOne({
-      user: userId,
-      status: 'completed',
-      $or: [
-        { expiryDate: { $exists: false } },
-        { expiryDate: { $gte: new Date() } },
-      ],
-    });
+    const activeEntitlement = await this.entitlementModel
+      .findOne({
+        user: userId,
+        status: 'active',
+        endDate: { $gte: new Date() },
+      })
+      .populate('package');
 
-    if (!activePayment) {
+    if (!activeEntitlement) {
       throw new HttpException(
-        'Restricted carer directory requires an active paid package',
+        'Restricted carer directory requires an active paid membership',
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
+    const pkg = activeEntitlement.package as unknown as { type?: string };
+    if (pkg?.type !== 'membership') {
+      throw new HttpException(
+        'Restricted carer directory requires an active membership package',
         HttpStatus.FORBIDDEN,
       );
     }

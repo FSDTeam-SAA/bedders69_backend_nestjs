@@ -9,7 +9,10 @@ export class Payment {
   user!: Types.ObjectId;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Subscribe' })
-  subscribe!: Types.ObjectId;
+  subscribe?: Types.ObjectId;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Package' })
+  package?: Types.ObjectId;
 
   @Prop()
   amount!: number;

@@ -15,6 +15,11 @@ import {
 } from './entities/profile-audit-log.entity';
 import { ProfileController } from './profile.controller';
 import { ProfileService } from './profile.service';
+import {
+  Entitlement,
+  EntitlementSchema,
+} from '../entitlement/entities/entitlement.entity';
+import { Package, PackageSchema } from '../package/entities/package.entity';
 
 @Module({
   imports: [
@@ -26,6 +31,8 @@ import { ProfileService } from './profile.service';
       { name: Company.name, schema: CompanySchema },
       { name: Care.name, schema: CareSchema },
       { name: Payment.name, schema: PaymentSchema },
+      { name: Entitlement.name, schema: EntitlementSchema },
+      { name: Package.name, schema: PackageSchema },
     ]),
   ],
   controllers: [ProfileController],

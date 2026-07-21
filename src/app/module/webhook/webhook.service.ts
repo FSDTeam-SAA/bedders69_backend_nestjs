@@ -9,6 +9,11 @@ import {
   Subscribe,
   SubscribeDocument,
 } from '../subscribe/entities/subscribe.entity';
+import { Package, PackageDocument } from '../package/entities/package.entity';
+import {
+  Entitlement,
+  EntitlementDocument,
+} from '../entitlement/entities/entitlement.entity';
 import type { Response } from 'express';
 
 @Injectable()
@@ -25,6 +30,12 @@ export class WebhookService {
 
     @InjectModel(Subscribe.name)
     private readonly subscribeModel: Model<SubscribeDocument>,
+
+    @InjectModel(Package.name)
+    private readonly packageModel: Model<PackageDocument>,
+
+    @InjectModel(Entitlement.name)
+    private readonly entitlementModel: Model<EntitlementDocument>,
   ) {
     if (config.stripe.secretKey) {
       this.stripe = new Stripe(config.stripe.secretKey);
@@ -70,7 +81,6 @@ export class WebhookService {
     }
   }
 
-  // ── payment_intent.succeeded ───────────────────────────────────────────────
   private async handlePaymentIntentSucceeded(
     event: Stripe.Event,
     res: Response,
@@ -82,41 +92,105 @@ export class WebhookService {
     });
     if (!payment) return res.json({ received: true });
 
+    if (payment.status === 'completed') {
+      this.logger.log(
+        `Payment ${String(payment._id)} already processed, skipping (idempotent)`,
+      );
+      return res.json({ received: true });
+    }
+
     payment.status = 'completed';
     await payment.save();
 
     const paymentType = intent.metadata?.paymentType ?? payment.paymentType;
 
     if (paymentType === 'subscription') {
-      const subscribeId =
-        payment.subscribe?.toString() ?? intent.metadata?.subscribeId;
-      if (!subscribeId) return res.json({ received: true });
-
-      const plan = await this.subscribeModel.findById(subscribeId);
-      if (!plan) return res.json({ received: true });
-
-      // Add user to plan's users array if not already present
-      const alreadyAdded = plan.user?.some(
-        (id) => id.toString() === payment.user.toString(),
-      );
-      if (!alreadyAdded) {
-        plan.user = plan.user ?? [];
-        plan.user.push(payment.user);
-        await plan.save();
-      }
-
-      return res.json({
-        received: true,
-        type: 'subscription',
-        userId: payment.user,
-        planId: plan._id,
-      });
+      await this.handleSubscriptionPayment(payment, intent, res);
+    } else {
+      await this.handlePackagePayment(payment, intent, res);
     }
-
-    return res.json({ received: true });
   }
 
-  // ── payment_intent.payment_failed ──────────────────────────────────────────
+  private async handleSubscriptionPayment(
+    payment: PaymentDocument,
+    intent: Stripe.PaymentIntent,
+    res: Response,
+  ) {
+    const subscribeId =
+      payment.subscribe?.toString() ?? intent.metadata?.subscribeId;
+    if (!subscribeId) return res.json({ received: true });
+
+    const plan = await this.subscribeModel.findById(subscribeId);
+    if (!plan) return res.json({ received: true });
+
+    const alreadyAdded = plan.user?.some(
+      (id) => id.toString() === payment.user.toString(),
+    );
+    if (!alreadyAdded) {
+      plan.user = plan.user ?? [];
+      plan.user.push(payment.user);
+      await plan.save();
+    }
+
+    return res.json({
+      received: true,
+      type: 'subscription',
+      userId: payment.user,
+      planId: plan._id,
+    });
+  }
+
+  private async handlePackagePayment(
+    payment: PaymentDocument,
+    intent: Stripe.PaymentIntent,
+    res: Response,
+  ) {
+    const packageId = payment.package?.toString() ?? intent.metadata?.packageId;
+    if (!packageId) return res.json({ received: true });
+
+    const existingEntitlement = await this.entitlementModel.findOne({
+      user: payment.user,
+      package: packageId,
+      status: 'active',
+    });
+    if (existingEntitlement) {
+      this.logger.log(
+        `Entitlement already active for user ${String(payment.user)} package ${String(packageId)}`,
+      );
+      return res.json({ received: true });
+    }
+
+    const pkg = await this.packageModel.findById(packageId);
+    if (!pkg) return res.json({ received: true });
+
+    const now = new Date();
+    const endDate = new Date(
+      now.getTime() + (pkg.durationDays || 30) * 24 * 60 * 60 * 1000,
+    );
+
+    await this.entitlementModel.create({
+      user: payment.user,
+      package: packageId,
+      payment: payment._id,
+      status: 'active',
+      startDate: now,
+      endDate,
+      usageCount: 0,
+      usageLimit: pkg.usageLimit || 0,
+    });
+
+    this.logger.log(
+      `Entitlement activated for user ${String(payment.user)} package ${String(packageId)}`,
+    );
+
+    return res.json({
+      received: true,
+      type: 'package',
+      userId: payment.user,
+      packageId: pkg._id,
+    });
+  }
+
   private async handlePaymentIntentFailed(event: Stripe.Event, res: Response) {
     const intent = event.data.object as Stripe.PaymentIntent;
 

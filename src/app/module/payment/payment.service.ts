@@ -7,6 +7,7 @@ import {
   Subscribe,
   SubscribeDocument,
 } from '../subscribe/entities/subscribe.entity';
+import { Package, PackageDocument } from '../package/entities/package.entity';
 import Stripe from 'stripe';
 import config from 'src/app/config';
 import { IFilterParams } from 'src/app/helpers/pick';
@@ -23,6 +24,8 @@ export class PaymentService {
     private readonly userModel: Model<UserDocument>,
     @InjectModel(Subscribe.name)
     private readonly subscribeModel: Model<SubscribeDocument>,
+    @InjectModel(Package.name)
+    private readonly packageModel: Model<PackageDocument>,
   ) {
     if (config.stripe.secretKey) {
       this.stripe = new Stripe(config.stripe.secretKey);
@@ -193,12 +196,100 @@ export class PaymentService {
     const payment = await this.paymentModel
       .findById(id)
       .populate('user')
-      .populate('subscribe');
+      .populate('subscribe')
+      .populate('package');
 
     if (!payment) {
       throw new HttpException('Payment not found', 404);
     }
 
     return payment;
+  }
+
+  async createPackageCheckout(userId: string, packageId: string) {
+    const stripe = this.getStripeClient();
+
+    const user = await this.userModel.findById(userId);
+    if (!user) throw new HttpException('User not found', 404);
+
+    const pkg = await this.packageModel.findById(packageId);
+    if (!pkg) throw new HttpException('Package not found', 404);
+    if (!pkg.isActive) {
+      throw new HttpException('This package is no longer available', 400);
+    }
+
+    const existingCompleted = await this.paymentModel.findOne({
+      user: user._id,
+      package: pkg._id,
+      status: 'completed',
+    });
+    if (existingCompleted) {
+      throw new HttpException('You have already purchased this package', 400);
+    }
+
+    const existingPending = await this.paymentModel.findOne({
+      user: user._id,
+      package: pkg._id,
+      status: 'pending',
+    });
+
+    if (existingPending?.stripePaymentIntentId) {
+      const existingPI = await stripe.paymentIntents.retrieve(
+        existingPending.stripePaymentIntentId,
+      );
+      if (
+        existingPI.status !== 'succeeded' &&
+        existingPI.status !== 'canceled'
+      ) {
+        return {
+          clientSecret: existingPI.client_secret,
+          paymentIntentId: existingPI.id,
+          amount: pkg.price,
+          packageId: pkg._id,
+        };
+      }
+    }
+
+    const amountInCents = Math.round(pkg.price * 100);
+    const expiryDate = new Date(
+      Date.now() + (pkg.durationDays || 30) * 24 * 60 * 60 * 1000,
+    );
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountInCents,
+      currency: 'usd',
+      payment_method_types: ['card'],
+      receipt_email: user.email,
+      metadata: {
+        userId: user._id.toString(),
+        packageId: pkg._id.toString(),
+        paymentType: pkg.type,
+        price: pkg.price.toString(),
+      },
+    });
+
+    if (existingPending) {
+      existingPending.stripePaymentIntentId = paymentIntent.id;
+      existingPending.amount = pkg.price;
+      existingPending.expiryDate = expiryDate;
+      await existingPending.save();
+    } else {
+      await this.paymentModel.create({
+        user: user._id,
+        package: pkg._id,
+        stripePaymentIntentId: paymentIntent.id,
+        amount: pkg.price,
+        paymentType: pkg.type,
+        status: 'pending',
+        expiryDate,
+      });
+    }
+
+    return {
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      amount: pkg.price,
+      packageId: pkg._id,
+    };
   }
 }

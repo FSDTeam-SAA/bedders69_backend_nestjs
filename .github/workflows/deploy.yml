@@ -25,25 +25,21 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 env:
-  # Node version used in GitHub Actions
   NODE_VERSION: 20
-
-  # Docker image name. GitHub repo Variables theke override korte parben.
   DOCKER_IMAGE_NAME: ${{ vars.DOCKER_IMAGE_NAME || 'nestjs-boilerplate-mongodb' }}
-
-  # VPS-er deploy folder. Example: /opt/my-api
   APP_DIR: ${{ vars.APP_DIR || '/opt/nestjs-boilerplate-mongodb' }}
-
-  # VPS public port and container app port
   APP_PORT: ${{ vars.APP_PORT || '5000' }}
   CONTAINER_PORT: ${{ vars.CONTAINER_PORT || '5000' }}
 
 jobs:
   # ------------------------------------------------------------
-  # Job 1: Quality check
+  # Job 1: Quality check (runs on push AND PR)
   # ------------------------------------------------------------
   quality:
     name: Build, Lint, And Test
@@ -75,12 +71,13 @@ jobs:
         run: npm run test:e2e
 
   # ------------------------------------------------------------
-  # Job 2: Docker build and push
+  # Job 2: Docker build and push (only on push to main)
   # ------------------------------------------------------------
   docker:
     name: Build And Push Docker Image
     runs-on: ubuntu-latest
     needs: quality
+    if: github.event_name == 'push'
 
     steps:
       - name: Checkout code
@@ -109,12 +106,13 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
 
   # ------------------------------------------------------------
-  # Job 3: Deploy latest Docker image to VPS
+  # Job 3: Deploy latest Docker image to VPS (only on push to main)
   # ------------------------------------------------------------
   deploy:
     name: Deploy To VPS
     runs-on: ubuntu-latest
     needs: docker
+    if: github.event_name == 'push'
     environment: production
 
     steps:
@@ -128,18 +126,12 @@ jobs:
           script: |
             set -e
 
-            # VPS deploy folder and Docker image
             APP_DIR="${{ env.APP_DIR }}"
             IMAGE="${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
 
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
 
-            # ------------------------------------------------
-            # Production .env file
-            # Ei values GitHub Secrets/Variables theke ashbe.
-            # Optional service use na korle related secrets empty rakhte paren.
-            # ------------------------------------------------
             cat > .env << 'ENVEOF'
             NODE_ENV=production
             PORT=${{ env.CONTAINER_PORT }}
@@ -182,10 +174,6 @@ jobs:
             APP_CONTAINER_NAME=${{ vars.APP_CONTAINER_NAME || 'nestjs_boilerplate_api' }}
             ENVEOF
 
-            # ------------------------------------------------
-            # Production docker-compose.yml
-            # VPS-e source code lagbe na, only Docker Hub image run korbe.
-            # ------------------------------------------------
             cat > docker-compose.yml << 'COMPOSEEOF'
             services:
               app:
@@ -210,13 +198,10 @@ jobs:
                 driver: bridge
             COMPOSEEOF
 
-            # Pull latest image and restart container
             docker pull "$IMAGE"
             docker compose down --remove-orphans
             docker compose up -d
 
-            # Remove unused old images to save VPS disk space
             docker image prune -f
 
-            # Show final container status
             docker compose ps

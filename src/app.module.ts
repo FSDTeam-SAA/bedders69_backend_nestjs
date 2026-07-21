@@ -15,6 +15,8 @@ import { FamilyModule } from './app/module/family/family.module';
 import { CompanyModule } from './app/module/company/company.module';
 import { CareModule } from './app/module/care/care.module';
 import { ProfileModule } from './app/module/profile/profile.module';
+import { PackageModule } from './app/module/package/package.module';
+import { EntitlementModule } from './app/module/entitlement/entitlement.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { ProfileModule } from './app/module/profile/profile.module';
     CompanyModule,
     CareModule,
     ProfileModule,
+    PackageModule,
+    EntitlementModule,
   ],
   controllers: [AppController],
   providers: [AppService],

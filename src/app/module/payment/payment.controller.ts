@@ -13,6 +13,7 @@ import type { Request } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
@@ -40,6 +41,39 @@ export class PaymentController {
     );
     return {
       message: 'Payment intent created successfully',
+      data: result,
+    };
+  }
+
+  @Post('create-package-checkout/:packageId')
+  @ApiOperation({
+    summary: 'Create payment intent for a package purchase',
+  })
+  @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'packageId', description: 'Package ID to purchase' })
+  @UseGuards(
+    AuthGuard(
+      ...[
+        'care_company',
+        'agency',
+        'supplier',
+        'service_provider',
+        'family',
+        'carer',
+      ],
+    ),
+  )
+  @HttpCode(HttpStatus.CREATED)
+  async createPackageCheckout(
+    @Req() req: Request,
+    @Param('packageId') packageId: string,
+  ) {
+    const result = await this.paymentService.createPackageCheckout(
+      req.user!.id,
+      packageId,
+    );
+    return {
+      message: 'Package checkout created successfully',
       data: result,
     };
   }

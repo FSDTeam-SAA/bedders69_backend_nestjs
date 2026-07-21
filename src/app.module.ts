@@ -20,6 +20,7 @@ import { ProductCategoryModule } from './app/module/product-category/product-cat
 import { ProductModule } from './app/module/product/product.module';
 import { CareModule } from './app/module/care/care.module';
 import { ProfileModule } from './app/module/profile/profile.module';
+import { AgencyModule } from './app/module/agency/agency.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { ProfileModule } from './app/module/profile/profile.module';
     ProductModule,
     CareModule,
     ProfileModule,
+    AgencyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

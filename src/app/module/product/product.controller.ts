@@ -11,12 +11,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import AuthGuard from 'src/app/middlewares/auth.guard';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -78,7 +73,10 @@ export class ProductController {
   @ApiBody({ type: CreateProductDto })
   @UseGuards(AuthGuard('supplier'))
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createProductDto: CreateProductDto, @Req() req: Request) {
+  async create(
+    @Body() createProductDto: CreateProductDto,
+    @Req() req: Request,
+  ) {
     const result = await this.productService.create(
       createProductDto,
       req.user!.id,

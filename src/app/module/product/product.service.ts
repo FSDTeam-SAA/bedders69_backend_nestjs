@@ -55,7 +55,11 @@ export class ProductService {
     return result;
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto, supplierId: string) {
+  async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+    supplierId: string,
+  ) {
     if (updateProductDto.categoryId) {
       const category = await this.productCategoryModel.findOne({
         _id: updateProductDto.categoryId,

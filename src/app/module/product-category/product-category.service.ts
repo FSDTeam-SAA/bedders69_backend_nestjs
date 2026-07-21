@@ -40,7 +40,9 @@ export class ProductCategoryService {
   }
 
   async findBySupplierId(supplierId: string) {
-    return this.productCategoryModel.find({ supplierId }).sort({ createdAt: -1 });
+    return this.productCategoryModel
+      .find({ supplierId })
+      .sort({ createdAt: -1 });
   }
 
   async update(

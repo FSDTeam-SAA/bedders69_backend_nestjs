@@ -11,6 +11,24 @@ const LocationSchema = new mongoose.Schema(
   { _id: false },
 );
 
+@Schema({ _id: false })
+export class Experience {
+  @Prop()
+  companyName!: string;
+
+  @Prop()
+  jobTitle!: string;
+
+  @Prop()
+  startDate!: Date;
+
+  @Prop()
+  endDate!: Date;
+
+  @Prop()
+  responsibilities!: string;
+}
+
 @Schema({ timestamps: true })
 export class Care {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
@@ -37,11 +55,14 @@ export class Care {
   @Prop({ enum: ['male', 'female'] })
   gender!: string;
 
-  @Prop({ default: false })
-  hasDrivingLicense!: boolean;
+  @Prop()
+  country!: string;
 
-  @Prop({ default: false })
-  hasVehicle!: boolean;
+  @Prop()
+  region!: string;
+
+  @Prop()
+  nationality!: string;
 
   @Prop()
   address!: string;
@@ -55,44 +76,80 @@ export class Care {
     coordinates: [number, number];
   };
 
-  @Prop()
-  shifts!: string;
-
-  @Prop({ type: [String] })
-  specialisms!: string[];
-
   @Prop({ default: 0 })
   yearsOfExperience!: number;
 
-  @Prop({ type: [String] })
+  @Prop()
+  rightToWorkInUk!: boolean;
+
+  @Prop({ default: false })
+  hasDrivingLicense!: boolean;
+
+  @Prop({ default: false })
+  hasVehicle!: boolean;
+
+  @Prop()
+  professionalSummary!: string;
+
+  @Prop({ type: [Experience], default: [] })
+  experience!: Experience[];
+
+  @Prop({ default: [] })
   skills!: string[];
 
-  @Prop({ type: [String] })
+  @Prop({ default: [] })
+  specialisms!: string[];
+
+  @Prop({ default: [] })
+  workPreferences!: string[];
+
+  @Prop()
+  currentAvailability!: string;
+
+  @Prop()
+  shifts!: string;
+
+  @Prop()
+  preferredRegions!: string;
+
+  @Prop()
+  preferredCities!: string;
+
+  @Prop()
+  maximumTravelDistance!: string;
+
+  @Prop({ default: [] })
+  preferredWorkType!: string[];
+
+  @Prop({ default: [] })
+  preferredShift!: string[];
+
+  @Prop()
+  cv!: string;
+
+  @Prop()
   documents!: string[];
 
   @Prop({ default: false })
   isPremium!: boolean;
 
-  @Prop({ default: false })
-  isFeatured!: boolean;
-
-  @Prop({ default: false })
+  @Prop({ default: true })
   isAvailable!: boolean;
 
-  @Prop({ default: false })
+  @Prop({ default: true })
   isActive!: boolean;
-
-  @Prop({ enum: ['incomplete', 'complete'], default: 'incomplete' })
-  profileCompletionStatus!: string;
-
-  @Prop({ default: 0 })
-  profileCompletionPercentage!: number;
 
   @Prop({ default: 0 })
   profileViews!: number;
 
   @Prop({ default: [] })
   applications!: Types.ObjectId[];
+
+  @Prop({ enum: ['incomplete', 'complete'], default: 'incomplete' })
+  profileCompletionStatus!: string;
+
+  @Prop({ default: 0 })
+  profileCompletionPercentage!: number;
 }
 
 export const CareSchema = SchemaFactory.createForClass(Care);

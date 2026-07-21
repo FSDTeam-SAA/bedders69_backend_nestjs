@@ -21,7 +21,7 @@ import {
 import AuthGuard from 'src/app/middlewares/auth.guard';
 import pick from 'src/app/helpers/pick';
 import type { Request } from 'express';
-import { CreateCouponDto } from './dto/create-coupon.dto';
+import { CreateDashboardCouponDto } from './dto/create-coupon.dto';
 import { CouponValidity } from './entities/coupon.entity';
 
 @ApiTags('Dashboard')
@@ -537,7 +537,7 @@ export class DashboardController {
   })
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
-  @ApiBody({ type: CreateCouponDto })
+  @ApiBody({ type: CreateDashboardCouponDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Coupon created successfully',
@@ -560,7 +560,7 @@ export class DashboardController {
     },
   })
   @HttpCode(HttpStatus.CREATED)
-  async createCoupon(@Body() createCouponDto: CreateCouponDto) {
+  async createCoupon(@Body() createCouponDto: CreateDashboardCouponDto) {
     const result = await this.dashboardService.createCoupon(createCouponDto);
 
     return {

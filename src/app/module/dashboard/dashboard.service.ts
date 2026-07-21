@@ -13,7 +13,7 @@ import {
   MarketplaceDocument,
 } from './entities/marketplace.entity';
 import { Coupon, CouponDocument } from './entities/coupon.entity';
-import { CreateCouponDto } from './dto/create-coupon.dto';
+import { CreateDashboardCouponDto } from './dto/create-coupon.dto';
 
 @Injectable()
 export class DashboardService {
@@ -47,7 +47,7 @@ export class DashboardService {
     return 'active';
   }
 
-  async createCoupon(createCouponDto: CreateCouponDto) {
+  async createCoupon(createCouponDto: CreateDashboardCouponDto) {
     const couponCode = createCouponDto.couponCode.trim().toUpperCase();
     const existingCoupon = await this.couponModel.findOne({ couponCode });
 

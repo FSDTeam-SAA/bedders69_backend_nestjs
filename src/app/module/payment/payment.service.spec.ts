@@ -218,6 +218,7 @@ describe('PaymentService', () => {
     const userModel = buildUserModel();
     const subscribeModel = buildSubscribeModel();
     const packageModel = buildPackageModel();
+    const stripe = buildStripeMock();
 
     userModel.findById.mockResolvedValue(null);
 
@@ -227,6 +228,7 @@ describe('PaymentService', () => {
       subscribeModel as any,
       packageModel as any,
     );
+    (service as any).stripe = stripe;
 
     await expect(
       service.createPackageCheckout('missing-user', 'pkg-id'),
@@ -241,6 +243,7 @@ describe('PaymentService', () => {
     const userModel = buildUserModel();
     const subscribeModel = buildSubscribeModel();
     const packageModel = buildPackageModel();
+    const stripe = buildStripeMock();
 
     userModel.findById.mockResolvedValue({
       _id: 'user-id',
@@ -254,6 +257,7 @@ describe('PaymentService', () => {
       subscribeModel as any,
       packageModel as any,
     );
+    (service as any).stripe = stripe;
 
     await expect(
       service.createPackageCheckout('user-id', 'missing-pkg'),

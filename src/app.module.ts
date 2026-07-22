@@ -23,6 +23,8 @@ import { ProfileModule } from './app/module/profile/profile.module';
 import { PackageModule } from './app/module/package/package.module';
 import { EntitlementModule } from './app/module/entitlement/entitlement.module';
 import { AgencyModule } from './app/module/agency/agency.module';
+import { JobModule } from './app/module/job/job.module';
+import { JobApplicationModule } from './app/module/job-application/job-application.module';
 
 @Module({
   imports: [
@@ -47,6 +49,8 @@ import { AgencyModule } from './app/module/agency/agency.module';
     PackageModule,
     EntitlementModule,
     AgencyModule,
+    JobModule,
+    JobApplicationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

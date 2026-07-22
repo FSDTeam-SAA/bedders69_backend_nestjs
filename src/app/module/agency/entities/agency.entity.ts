@@ -20,13 +20,19 @@ export class Agency {
   website!: string;
 
   @Prop()
-  address!: string;
-
-  @Prop()
   discription!: string;
 
   @Prop()
   alternatageEmail!: string;
+
+  @Prop()
+  address!: string;
+
+  @Prop()
+  specialisations!: string[];
+
+  @Prop()
+  documents!: string[];
 }
 
 export const AgencySchema = SchemaFactory.createForClass(Agency);

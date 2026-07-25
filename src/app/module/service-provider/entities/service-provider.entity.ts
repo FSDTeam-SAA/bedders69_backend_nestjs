@@ -49,6 +49,12 @@ export class ServiceProvider {
     latitude: number;
     longitude: number;
   };
+
+  @Prop({ enum: ['incomplete', 'complete'], default: 'incomplete' })
+  profileCompletionStatus!: string;
+
+  @Prop({ default: 0 })
+  profileCompletionPercentage!: number;
 }
 
 export const ServiceProviderSchema =

@@ -26,6 +26,7 @@ import { AgencyModule } from './app/module/agency/agency.module';
 import { JobModule } from './app/module/job/job.module';
 import { JobApplicationModule } from './app/module/job-application/job-application.module';
 import { ServiceProviderModule } from './app/module/service-provider/service-provider.module';
+import { ProductSupplierModule } from './app/module/product-supplier/product-supplier.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { ServiceProviderModule } from './app/module/service-provider/service-pro
     JobModule,
     JobApplicationModule,
     ServiceProviderModule,
+    ProductSupplierModule,
   ],
   controllers: [AppController],
   providers: [AppService],

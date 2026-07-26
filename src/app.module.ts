@@ -28,6 +28,10 @@ import { JobApplicationModule } from './app/module/job-application/job-applicati
 import { MarketplaceModule } from './app/module/marketplace/marketplace.module';
 import { AdvertisementModule } from './app/module/advertisement/advertisement.module';
 
+import { ServiceProviderModule } from './app/module/service-provider/service-provider.module';
+import { ProductSupplierModule } from './app/module/product-supplier/product-supplier.module';
+
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -55,6 +59,8 @@ import { AdvertisementModule } from './app/module/advertisement/advertisement.mo
     JobApplicationModule,
     MarketplaceModule,
     AdvertisementModule,
+    ServiceProviderModule,
+    ProductSupplierModule,
   ],
   controllers: [AppController],
   providers: [AppService],

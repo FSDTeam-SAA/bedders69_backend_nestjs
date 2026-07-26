@@ -25,6 +25,8 @@ import { EntitlementModule } from './app/module/entitlement/entitlement.module';
 import { AgencyModule } from './app/module/agency/agency.module';
 import { JobModule } from './app/module/job/job.module';
 import { JobApplicationModule } from './app/module/job-application/job-application.module';
+import { MarketplaceModule } from './app/module/marketplace/marketplace.module';
+import { AdvertisementModule } from './app/module/advertisement/advertisement.module';
 
 @Module({
   imports: [
@@ -51,6 +53,8 @@ import { JobApplicationModule } from './app/module/job-application/job-applicati
     AgencyModule,
     JobModule,
     JobApplicationModule,
+    MarketplaceModule,
+    AdvertisementModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -25,8 +25,12 @@ import { EntitlementModule } from './app/module/entitlement/entitlement.module';
 import { AgencyModule } from './app/module/agency/agency.module';
 import { JobModule } from './app/module/job/job.module';
 import { JobApplicationModule } from './app/module/job-application/job-application.module';
+import { MarketplaceModule } from './app/module/marketplace/marketplace.module';
+import { AdvertisementModule } from './app/module/advertisement/advertisement.module';
+
 import { ServiceProviderModule } from './app/module/service-provider/service-provider.module';
 import { ProductSupplierModule } from './app/module/product-supplier/product-supplier.module';
+
 
 @Module({
   imports: [
@@ -53,6 +57,8 @@ import { ProductSupplierModule } from './app/module/product-supplier/product-sup
     AgencyModule,
     JobModule,
     JobApplicationModule,
+    MarketplaceModule,
+    AdvertisementModule,
     ServiceProviderModule,
     ProductSupplierModule,
   ],

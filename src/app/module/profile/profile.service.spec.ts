@@ -41,6 +41,10 @@ const buildPackageModel = () => ({
   findById: jest.fn(),
 });
 
+const buildNotificationService = () => ({
+  notifyEmail: jest.fn().mockResolvedValue({ _id: 'notification-id' }),
+});
+
 const buildFindChain = (items: unknown[]) => ({
   select: jest.fn().mockReturnThis(),
   skip: jest.fn().mockReturnThis(),
@@ -60,6 +64,7 @@ const makeProfileService = (overrides: Record<string, unknown> = {}) => {
     paymentModel: buildPaymentModel(),
     entitlementModel: buildEntitlementModel(),
     packageModel: buildPackageModel(),
+    notificationService: buildNotificationService(),
   };
   const models = { ...defaults, ...overrides };
   return {
@@ -73,6 +78,7 @@ const makeProfileService = (overrides: Record<string, unknown> = {}) => {
       models.paymentModel as any,
       models.entitlementModel as any,
       models.packageModel as any,
+      models.notificationService as any,
     ),
     ...models,
   };
@@ -145,10 +151,17 @@ describe('ProfileService', () => {
   });
 
   it('approves a profile and writes an audit log', async () => {
-    const { service, userModel, organizationProfileModel, auditLogModel } =
-      makeProfileService();
+    const {
+      service,
+      userModel,
+      organizationProfileModel,
+      auditLogModel,
+      notificationService,
+    } = makeProfileService();
     const targetUser = {
       _id: 'target-user-id',
+      fullName: 'Agency User',
+      email: 'agency@example.com',
       role: 'agency',
       status: 'pending',
       save: jest.fn().mockResolvedValue(undefined),
@@ -179,6 +192,13 @@ describe('ProfileService', () => {
       nextStatus: 'active',
       reason: 'Verified',
     });
+    expect(notificationService.notifyEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'profile_approved',
+        recipientEmail: 'agency@example.com',
+        recipientUserId: 'target-user-id',
+      }),
+    );
     expect(result).toMatchObject({
       userId: 'target-user-id',
       role: 'agency',

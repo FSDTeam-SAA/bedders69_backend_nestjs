@@ -39,6 +39,7 @@ export class FamilyController {
     summary: 'Create a new family',
   })
   @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreateFamilyDto })
   @UseInterceptors(FileInterceptor('profilePicture', fileUpload.uploadConfig))
   @HttpCode(HttpStatus.CREATED)
   async createFamily(

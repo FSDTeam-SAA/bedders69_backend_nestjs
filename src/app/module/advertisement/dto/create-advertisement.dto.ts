@@ -7,6 +7,7 @@ import {
   IsUrl,
 } from 'class-validator';
 import { ADVERTISEMENT_PLACEMENTS } from '../entities/advertisement.entity';
+import type { AdvertisementPlacement } from '../entities/advertisement.entity';
 
 export class CreateAdvertisementDto {
   @ApiProperty({ example: 'Premium home care beds now available' })
@@ -22,7 +23,7 @@ export class CreateAdvertisementDto {
 
   @ApiProperty({ enum: ADVERTISEMENT_PLACEMENTS, example: 'marketplace_top' })
   @IsEnum(ADVERTISEMENT_PLACEMENTS)
-  placement!: string;
+  placement!: AdvertisementPlacement;
 
   @ApiPropertyOptional({ example: 'https://example.com/care-beds' })
   @IsOptional()

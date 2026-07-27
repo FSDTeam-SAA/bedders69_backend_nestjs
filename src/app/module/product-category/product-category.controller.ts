@@ -11,7 +11,13 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
 import AuthGuard from 'src/app/middlewares/auth.guard';
 import { CreateProductCategoryDto } from './dto/create-product-category.dto';
@@ -59,6 +65,7 @@ export class ProductCategoryController {
 
   @Get('supplier/:supplierId')
   @ApiOperation({ summary: 'Get product categories by supplier id' })
+  @ApiParam({ name: 'supplierId', type: String, description: 'Supplier ID' })
   async findBySupplierId(@Param('supplierId') supplierId: string) {
     const result =
       await this.productCategoryService.findBySupplierId(supplierId);
@@ -71,6 +78,7 @@ export class ProductCategoryController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get single product category' })
+  @ApiParam({ name: 'id', type: String, description: 'Product category ID' })
   async findOne(@Param('id') id: string) {
     const result = await this.productCategoryService.findOne(id);
 
@@ -83,6 +91,7 @@ export class ProductCategoryController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update product category' })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Product category ID' })
   @ApiBody({ type: UpdateProductCategoryDto })
   @UseGuards(AuthGuard('supplier'))
   async update(
@@ -105,6 +114,7 @@ export class ProductCategoryController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete product category' })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Product category ID' })
   @UseGuards(AuthGuard('supplier'))
   async remove(@Param('id') id: string, @Req() req: Request) {
     const result = await this.productCategoryService.remove(id, req.user!.id);

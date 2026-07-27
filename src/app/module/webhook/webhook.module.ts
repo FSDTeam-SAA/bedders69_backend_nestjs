@@ -13,9 +13,11 @@ import {
   Entitlement,
   EntitlementSchema,
 } from '../entitlement/entities/entitlement.entity';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
+    NotificationModule,
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: Payment.name, schema: PaymentSchema },

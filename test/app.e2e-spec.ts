@@ -27,7 +27,8 @@ describe('AppController (e2e)', () => {
         name: `${config.appName} API`,
         status: 'ok',
         databaseEnabled: true,
-        swaggerUrl: '/api/docs',
+        docsUrl: '/api/docs',
+        openApiUrl: '/api/openapi.json',
         version: '1.0.0',
       });
   });

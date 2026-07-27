@@ -39,6 +39,7 @@ export class CompanyController {
     summary: 'Create a new care company',
   })
   @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreateCompanyDto })
   @UseInterceptors(
     FileFieldsInterceptor(
       [

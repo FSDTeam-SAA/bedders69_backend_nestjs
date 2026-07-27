@@ -33,6 +33,7 @@ import {
   EntitlementDocument,
 } from '../entitlement/entities/entitlement.entity';
 import { Package, PackageDocument } from '../package/entities/package.entity';
+import { NotificationService } from '../notification/notification.service';
 
 const PROFILE_ROLE_LABELS: Record<string, string> = {
   agency: 'Recruitment agency',
@@ -68,10 +69,19 @@ export class ProfileService {
     private readonly entitlementModel: Model<EntitlementDocument>,
     @InjectModel(Package.name)
     private readonly packageModel: Model<PackageDocument>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   private normalizeProfileType(profileType: OrganizationProfileType): UserRole {
     return profileType;
+  }
+
+  private isOrganizationProfileType(
+    role: UserRole | undefined,
+  ): role is OrganizationProfileType {
+    return (
+      role === 'agency' || role === 'supplier' || role === 'service_provider'
+    );
   }
 
   private getCompletion(values: Record<string, unknown>): {
@@ -114,7 +124,10 @@ export class ProfileService {
     }
   }
 
-  private async findOrganizationProfile(userId: string, role: UserRole) {
+  private async findOrganizationProfile(
+    userId: string,
+    role: OrganizationProfileType,
+  ) {
     const profile = await this.organizationProfileModel.findOne({
       userId,
       profileType: role,
@@ -169,6 +182,13 @@ export class ProfileService {
   }
 
   async getMyOrganizationProfile(userId: string, role: UserRole) {
+    if (!this.isOrganizationProfileType(role)) {
+      throw new HttpException(
+        'Organization profile not found',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
     return this.findOrganizationProfile(userId, role);
   }
 
@@ -177,6 +197,13 @@ export class ProfileService {
     role: UserRole,
     updateProfileDto: UpdateOrganizationProfileDto,
   ) {
+    if (!this.isOrganizationProfileType(role)) {
+      throw new HttpException(
+        'Organization profile not found',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
     const currentProfile = await this.findOrganizationProfile(userId, role);
     const {
       password: _password,
@@ -263,7 +290,7 @@ export class ProfileService {
       profile = await this.companyModel.findOne({ userId }).lean();
     } else if (role === 'carer') {
       profile = await this.careModel.findOne({ userId }).lean();
-    } else if (role) {
+    } else if (this.isOrganizationProfileType(role)) {
       profile = await this.organizationProfileModel
         .findOne({ userId, profileType: role })
         .lean();
@@ -299,6 +326,29 @@ export class ProfileService {
       reason: dto.reason,
     });
 
+    if (action === 'approve-profile' || action === 'reject-profile') {
+      await this.notificationService.notifyEmail({
+        event:
+          action === 'approve-profile'
+            ? 'profile_approved'
+            : 'profile_rejected',
+        recipientEmail: user.email,
+        recipientName: user.fullName,
+        recipientUserId: String(user._id),
+        templateData: {
+          profileRole: user.role,
+          reason: dto.reason,
+        },
+        metadata: {
+          actorUserId,
+          targetUserId: dto.userId,
+          previousStatus,
+          nextStatus,
+          action,
+        },
+      });
+    }
+
     return {
       userId: dto.userId,
       role: user.role,
@@ -326,7 +376,7 @@ export class ProfileService {
       return;
     }
 
-    if (['agency', 'supplier', 'service_provider'].includes(role)) {
+    if (this.isOrganizationProfileType(role)) {
       await this.organizationProfileModel.findOneAndUpdate(
         { userId, profileType: role },
         { status },
@@ -358,14 +408,14 @@ export class ProfileService {
 
   async searchCareCompanies(params: IFilterParams, options: IOptions) {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
-    const whereConditions = {
+    const whereConditions: Record<string, unknown> = {
       ...this.buildSearchConditions(params, [
         'companyName',
         'email',
         'address',
         'postCode',
       ]),
-      status: 'approved',
+      status: 'approved' as const,
     };
 
     const [total, companies] = await Promise.all([
@@ -408,7 +458,7 @@ export class ProfileService {
     options: IOptions,
   ) {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
-    const whereConditions = {
+    const whereConditions: Record<string, unknown> = {
       ...this.buildSearchConditions(params, [
         'organizationName',
         'email',
@@ -422,9 +472,9 @@ export class ProfileService {
     };
 
     const [total, profiles] = await Promise.all([
-      this.organizationProfileModel.countDocuments(whereConditions),
+      this.organizationProfileModel.countDocuments(whereConditions as any),
       this.organizationProfileModel
-        .find(whereConditions)
+        .find(whereConditions as any)
         .select(
           'organizationName email phoneNumber address city postCode websiteLink description services status profileCompletionStatus createdAt',
         )
@@ -490,7 +540,7 @@ export class ProfileService {
           HttpStatus.FORBIDDEN,
         );
       }
-    } else {
+    } else if (this.isOrganizationProfileType(role)) {
       const approvedProfile = await this.organizationProfileModel.findOne({
         userId,
         profileType: role,

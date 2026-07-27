@@ -23,6 +23,7 @@ import {
   MarketplaceListing,
   MarketplaceListingDocument,
 } from './entities/marketplace-listing.entity';
+import { NotificationService } from '../notification/notification.service';
 
 type PopulatedMarketplaceEntitlement = EntitlementDocument & {
   package?: { type?: string };
@@ -44,6 +45,7 @@ export class MarketplaceService {
     private readonly userModel: Model<UserDocument>,
     @InjectModel(Entitlement.name)
     private readonly entitlementModel: Model<EntitlementDocument>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createMarketplaceListing(
@@ -356,12 +358,36 @@ export class MarketplaceService {
       $inc: { inquiryCount: 1 },
     });
 
+    const seller = await this.userModel
+      .findById((listing as any).sellerUserId)
+      .select('fullName email')
+      .lean();
+
+    await this.notificationService.notifyEmail({
+      event: 'marketplace_inquiry_created',
+      recipientEmail: (seller as any)?.email,
+      recipientName: (seller as any)?.fullName,
+      recipientUserId: String((listing as any).sellerUserId),
+      templateData: {
+        listingTitle: (listing as any).title,
+        inquiryName: dto.name,
+      },
+      metadata: {
+        listingId,
+        inquiryId: String((inquiry as any)._id),
+        buyerUserId,
+      },
+    });
+
     return inquiry;
   }
 
   async getMyMarketplaceListings(sellerUserId: string, options: IOptions) {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
-    const whereConditions = { sellerUserId, status: { $ne: 'deleted' } };
+    const whereConditions: Record<string, unknown> = {
+      sellerUserId,
+      status: { $ne: 'deleted' },
+    };
 
     const [total, listings] = await Promise.all([
       this.listingModel.countDocuments(whereConditions),

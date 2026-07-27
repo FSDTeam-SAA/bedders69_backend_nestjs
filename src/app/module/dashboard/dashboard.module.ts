@@ -12,6 +12,33 @@ import {
   Subscribe,
   SubscribeSchema,
 } from '../subscribe/entities/subscribe.entity';
+import { Family, FamilySchema } from '../family/entities/family.entity';
+import { Care, CareSchema } from '../care/entities/care.entity';
+import {
+  OrganizationProfile,
+  OrganizationProfileSchema,
+} from '../profile/entities/organization-profile.entity';
+import { Job, JobSchema } from '../job/entities/job.entity';
+import {
+  JobApplication,
+  JobApplicationSchema,
+} from '../job-application/entities/job-application.entity';
+import {
+  MarketplaceListing,
+  MarketplaceListingSchema,
+} from '../marketplace/entities/marketplace-listing.entity';
+import {
+  MarketplaceInquiry,
+  MarketplaceInquirySchema,
+} from '../marketplace/entities/marketplace-inquiry.entity';
+import {
+  Advertisement,
+  AdvertisementSchema,
+} from '../advertisement/entities/advertisement.entity';
+import {
+  NotificationLog,
+  NotificationLogSchema,
+} from '../notification/entities/notification-log.entity';
 
 @Module({
   imports: [
@@ -23,6 +50,15 @@ import {
       { name: Marketplace.name, schema: MarketplaceSchema },
       { name: Coupon.name, schema: CouponSchema },
       { name: Subscribe.name, schema: SubscribeSchema },
+      { name: Family.name, schema: FamilySchema },
+      { name: Care.name, schema: CareSchema },
+      { name: OrganizationProfile.name, schema: OrganizationProfileSchema },
+      { name: Job.name, schema: JobSchema },
+      { name: JobApplication.name, schema: JobApplicationSchema },
+      { name: MarketplaceListing.name, schema: MarketplaceListingSchema },
+      { name: MarketplaceInquiry.name, schema: MarketplaceInquirySchema },
+      { name: Advertisement.name, schema: AdvertisementSchema },
+      { name: NotificationLog.name, schema: NotificationLogSchema },
     ]),
   ],
   controllers: [DashboardController],

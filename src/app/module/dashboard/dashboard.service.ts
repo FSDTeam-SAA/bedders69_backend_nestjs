@@ -14,6 +14,33 @@ import {
 } from './entities/marketplace.entity';
 import { Coupon, CouponDocument } from './entities/coupon.entity';
 import { CreateDashboardCouponDto } from './dto/create-coupon.dto';
+import { Family, FamilyDocument } from '../family/entities/family.entity';
+import { Care, CareDocument } from '../care/entities/care.entity';
+import {
+  OrganizationProfile,
+  OrganizationProfileDocument,
+} from '../profile/entities/organization-profile.entity';
+import { Job, JobDocument } from '../job/entities/job.entity';
+import {
+  JobApplication,
+  JobApplicationDocument,
+} from '../job-application/entities/job-application.entity';
+import {
+  MarketplaceListing,
+  MarketplaceListingDocument,
+} from '../marketplace/entities/marketplace-listing.entity';
+import {
+  MarketplaceInquiry,
+  MarketplaceInquiryDocument,
+} from '../marketplace/entities/marketplace-inquiry.entity';
+import {
+  Advertisement,
+  AdvertisementDocument,
+} from '../advertisement/entities/advertisement.entity';
+import {
+  NotificationLog,
+  NotificationLogDocument,
+} from '../notification/entities/notification-log.entity';
 
 @Injectable()
 export class DashboardService {
@@ -29,6 +56,24 @@ export class DashboardService {
     private readonly marketplaceModel: Model<MarketplaceDocument>,
     @InjectModel(Coupon.name)
     private readonly couponModel: Model<CouponDocument>,
+    @InjectModel(Family.name)
+    private readonly familyModel: Model<FamilyDocument>,
+    @InjectModel(Care.name)
+    private readonly careModel: Model<CareDocument>,
+    @InjectModel(OrganizationProfile.name)
+    private readonly organizationProfileModel: Model<OrganizationProfileDocument>,
+    @InjectModel(Job.name)
+    private readonly jobModel: Model<JobDocument>,
+    @InjectModel(JobApplication.name)
+    private readonly jobApplicationModel: Model<JobApplicationDocument>,
+    @InjectModel(MarketplaceListing.name)
+    private readonly marketplaceListingModel: Model<MarketplaceListingDocument>,
+    @InjectModel(MarketplaceInquiry.name)
+    private readonly marketplaceInquiryModel: Model<MarketplaceInquiryDocument>,
+    @InjectModel(Advertisement.name)
+    private readonly advertisementModel: Model<AdvertisementDocument>,
+    @InjectModel(NotificationLog.name)
+    private readonly notificationLogModel: Model<NotificationLogDocument>,
   ) {}
 
   private getCouponStatus(coupon: any) {
@@ -438,5 +483,156 @@ export class DashboardService {
         status: this.getCouponStatus(coupon),
       })),
     };
+  }
+
+  async getMvpReports() {
+    const [
+      totalUsers,
+      usersByRole,
+      usersByStatus,
+      familyProfiles,
+      carerProfiles,
+      careCompanyApprovals,
+      organizationApprovals,
+      revenueResult,
+      paymentsByStatus,
+      jobsByStatus,
+      totalApplications,
+      marketplaceByStatus,
+      totalMarketplaceInquiries,
+      adsByStatus,
+      adPerformance,
+      notificationsByStatus,
+    ] = await Promise.all([
+      this.userModel.countDocuments(),
+      this.userModel.aggregate([
+        { $group: { _id: '$role', total: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      this.userModel.aggregate([
+        { $group: { _id: '$status', total: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      this.familyModel.countDocuments(),
+      this.careModel.countDocuments(),
+      this.companyModel.aggregate([
+        { $group: { _id: '$status', total: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      this.organizationProfileModel.aggregate([
+        {
+          $group: {
+            _id: { profileType: '$profileType', status: '$status' },
+            total: { $sum: 1 },
+          },
+        },
+        { $sort: { '_id.profileType': 1, '_id.status': 1 } },
+      ]),
+      this.paymentModel.aggregate([
+        { $match: { status: 'completed' } },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: {
+              $sum: {
+                $convert: {
+                  input: '$amount',
+                  to: 'double',
+                  onError: 0,
+                  onNull: 0,
+                },
+              },
+            },
+            completedPayments: { $sum: 1 },
+          },
+        },
+      ]),
+      this.paymentModel.aggregate([
+        { $group: { _id: '$status', total: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      this.jobModel.aggregate([
+        { $group: { _id: '$status', total: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      this.jobApplicationModel.countDocuments(),
+      this.marketplaceListingModel.aggregate([
+        { $group: { _id: '$status', total: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      this.marketplaceInquiryModel.countDocuments(),
+      this.advertisementModel.aggregate([
+        { $group: { _id: '$status', total: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      this.advertisementModel.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalImpressions: { $sum: '$impressionCount' },
+            totalClicks: { $sum: '$clickCount' },
+          },
+        },
+      ]),
+      this.notificationLogModel.aggregate([
+        { $group: { _id: '$status', total: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+    ]);
+
+    const revenue = revenueResult[0] || {};
+    const ads = adPerformance[0] || {};
+    const totalImpressions = Number(ads.totalImpressions || 0);
+    const totalClicks = Number(ads.totalClicks || 0);
+
+    return {
+      users: {
+        total: totalUsers,
+        byRole: this.toCountMap(usersByRole),
+        byStatus: this.toCountMap(usersByStatus),
+      },
+      approvals: {
+        familyProfiles,
+        carerProfiles,
+        careCompanies: this.toCountMap(careCompanyApprovals),
+        organizations: organizationApprovals.map((item: any) => ({
+          profileType: item._id?.profileType,
+          status: item._id?.status,
+          total: Number(item.total || 0),
+        })),
+      },
+      revenue: {
+        totalRevenue: Number(Number(revenue.totalRevenue || 0).toFixed(2)),
+        completedPayments: Number(revenue.completedPayments || 0),
+        paymentsByStatus: this.toCountMap(paymentsByStatus),
+      },
+      jobs: {
+        byStatus: this.toCountMap(jobsByStatus),
+        applications: totalApplications,
+      },
+      marketplace: {
+        listingsByStatus: this.toCountMap(marketplaceByStatus),
+        inquiries: totalMarketplaceInquiries,
+      },
+      advertisements: {
+        byStatus: this.toCountMap(adsByStatus),
+        totalImpressions,
+        totalClicks,
+        clickThroughRate:
+          totalImpressions > 0
+            ? Number(((totalClicks / totalImpressions) * 100).toFixed(2))
+            : 0,
+      },
+      notifications: {
+        byStatus: this.toCountMap(notificationsByStatus),
+      },
+    };
+  }
+
+  private toCountMap(items: Array<{ _id: string; total: number }>) {
+    return items.reduce<Record<string, number>>((acc, item) => {
+      acc[String(item._id || 'unknown')] = Number(item.total || 0);
+      return acc;
+    }, {});
   }
 }

@@ -10,7 +10,13 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import AuthGuard from 'src/app/middlewares/auth.guard';
 import { CouponService } from './coupon.service';
 import { CreateCouponDto } from './dto/create-coupon.dto';
@@ -50,6 +56,7 @@ export class CouponController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update coupon' })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Coupon ID' })
   @ApiBody({ type: UpdateCouponDto })
   @UseGuards(AuthGuard('admin'))
   async update(
@@ -67,6 +74,7 @@ export class CouponController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete coupon' })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Coupon ID' })
   @UseGuards(AuthGuard('admin'))
   async remove(@Param('id') id: string) {
     const result = await this.couponService.remove(id);

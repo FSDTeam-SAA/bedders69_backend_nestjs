@@ -22,6 +22,10 @@ const buildEntitlementModel = () => ({
   updateMany: jest.fn(),
 });
 
+const buildNotificationService = () => ({
+  notifyEmail: jest.fn().mockResolvedValue({ _id: 'notification-id' }),
+});
+
 const buildFindChain = (items: unknown[]) => ({
   select: jest.fn().mockReturnThis(),
   populate: jest.fn().mockReturnThis(),
@@ -41,11 +45,13 @@ const buildService = () => {
   const auditLogModel = buildAuditLogModel();
   const userModel = buildUserModel();
   const entitlementModel = buildEntitlementModel();
+  const notificationService = buildNotificationService();
   const service = new AdvertisementService(
     advertisementModel as any,
     auditLogModel as any,
     userModel as any,
     entitlementModel as any,
+    notificationService as any,
   );
 
   return {
@@ -54,6 +60,7 @@ const buildService = () => {
     auditLogModel,
     userModel,
     entitlementModel,
+    notificationService,
   };
 };
 
@@ -210,15 +217,31 @@ describe('AdvertisementService', () => {
 
   describe('admin approval', () => {
     it('approves a pending advertisement and writes audit log', async () => {
-      const { service, advertisementModel, auditLogModel } = buildService();
+      const {
+        service,
+        advertisementModel,
+        auditLogModel,
+        userModel,
+        notificationService,
+      } = buildService();
       const advertisement = {
         _id: 'ad-id',
+        advertiserUserId: 'advertiser-id',
+        title: 'Care bed sale',
         status: 'pending_approval',
         isActive: false,
         save: jest.fn().mockResolvedValue(undefined),
       };
       advertisementModel.findById.mockResolvedValue(advertisement);
       auditLogModel.create.mockResolvedValue({});
+      userModel.findById.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue({
+          _id: 'advertiser-id',
+          fullName: 'Advertiser',
+          email: 'ads@example.com',
+        }),
+      });
 
       const result = await service.approveAdvertisement(
         'admin-id',
@@ -238,19 +261,42 @@ describe('AdvertisementService', () => {
           nextStatus: 'approved',
         }),
       );
+      expect(notificationService.notifyEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'advertisement_approved',
+          recipientEmail: 'ads@example.com',
+          recipientUserId: 'advertiser-id',
+        }),
+      );
       expect(result).toMatchObject({ status: 'approved' });
     });
 
     it('rejects a pending advertisement and writes audit log', async () => {
-      const { service, advertisementModel, auditLogModel } = buildService();
+      const {
+        service,
+        advertisementModel,
+        auditLogModel,
+        userModel,
+        notificationService,
+      } = buildService();
       const advertisement = {
         _id: 'ad-id',
+        advertiserUserId: 'advertiser-id',
+        title: 'Care bed sale',
         status: 'pending_approval',
         isActive: true,
         save: jest.fn().mockResolvedValue(undefined),
       };
       advertisementModel.findById.mockResolvedValue(advertisement);
       auditLogModel.create.mockResolvedValue({});
+      userModel.findById.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue({
+          _id: 'advertiser-id',
+          fullName: 'Advertiser',
+          email: 'ads@example.com',
+        }),
+      });
 
       await service.rejectAdvertisement('admin-id', 'ad-id', 'Bad creative');
 
@@ -261,6 +307,13 @@ describe('AdvertisementService', () => {
         expect.objectContaining({
           action: 'reject-advertisement',
           nextStatus: 'rejected',
+        }),
+      );
+      expect(notificationService.notifyEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'advertisement_rejected',
+          recipientEmail: 'ads@example.com',
+          recipientUserId: 'advertiser-id',
         }),
       );
     });

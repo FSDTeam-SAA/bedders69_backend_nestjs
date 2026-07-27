@@ -19,6 +19,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
@@ -41,6 +42,7 @@ export class UserController {
   })
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: CreateUserDto })
   @UseInterceptors(FileInterceptor('profilePicture', fileUpload.uploadConfig))
   @HttpCode(HttpStatus.CREATED)
   async createFamily(
@@ -227,9 +229,8 @@ export class UserController {
   @ApiOperation({
     summary: 'Get single user by id',
   })
-  @ApiQuery({
+  @ApiParam({
     name: 'id',
-    required: true,
     type: String,
     example: '',
     description: 'User id',
@@ -250,6 +251,7 @@ export class UserController {
   })
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', type: String, description: 'User id' })
   @UseGuards(AuthGuard('admin'))
   @UseInterceptors(FileInterceptor('profilePicture', fileUpload.uploadConfig))
   @ApiBody({ type: UpdateUserDto })
@@ -273,9 +275,8 @@ export class UserController {
   })
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
-  @ApiQuery({
+  @ApiParam({
     name: 'id',
-    required: true,
     type: String,
     example: '',
     description: 'User id',

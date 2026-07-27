@@ -18,6 +18,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
@@ -119,6 +120,7 @@ export class SubscribeController {
   @ApiOperation({
     summary: 'Get one subscribe plan',
   })
+  @ApiParam({ name: 'id', type: String, description: 'Subscription plan ID' })
   async findOne(@Param('id') id: string) {
     const result = await this.subscribeService.getSingleSubscribe(id);
 
@@ -133,6 +135,7 @@ export class SubscribeController {
     summary: 'Update one subscribe plan',
   })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Subscription plan ID' })
   @ApiBody({ type: UpdateSubscribeDto })
   @UseGuards(AuthGuard('admin'))
   async update(
@@ -155,6 +158,7 @@ export class SubscribeController {
     summary: 'Delete one subscribe plan',
   })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Subscription plan ID' })
   @UseGuards(AuthGuard('admin'))
   async remove(@Param('id') id: string) {
     const result = await this.subscribeService.deleteSubscribe(id);

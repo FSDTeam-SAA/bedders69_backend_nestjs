@@ -27,10 +27,10 @@ import { JobModule } from './app/module/job/job.module';
 import { JobApplicationModule } from './app/module/job-application/job-application.module';
 import { MarketplaceModule } from './app/module/marketplace/marketplace.module';
 import { AdvertisementModule } from './app/module/advertisement/advertisement.module';
+import { NotificationModule } from './app/module/notification/notification.module';
 
 import { ServiceProviderModule } from './app/module/service-provider/service-provider.module';
 import { ProductSupplierModule } from './app/module/product-supplier/product-supplier.module';
-
 
 @Module({
   imports: [
@@ -59,6 +59,7 @@ import { ProductSupplierModule } from './app/module/product-supplier/product-sup
     JobApplicationModule,
     MarketplaceModule,
     AdvertisementModule,
+    NotificationModule,
     ServiceProviderModule,
     ProductSupplierModule,
   ],

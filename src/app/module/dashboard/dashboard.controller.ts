@@ -639,4 +639,63 @@ export class DashboardController {
       data: result.data,
     };
   }
+
+  @Get('mvp-reports')
+  @ApiOperation({
+    summary: 'Get MVP admin reports',
+    description:
+      'Returns consolidated MVP metrics for users, approvals, revenue, jobs, marketplace, advertisements, and notifications.',
+  })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'MVP admin reports fetched successfully',
+    schema: {
+      example: {
+        message: 'MVP admin reports fetched successfully',
+        data: {
+          users: {
+            total: 120,
+            byRole: { carer: 60, care_company: 12 },
+            byStatus: { active: 80, pending: 30 },
+          },
+          approvals: {
+            familyProfiles: 20,
+            carerProfiles: 60,
+            careCompanies: { approved: 8, pending: 4 },
+            organizations: [
+              { profileType: 'supplier', status: 'approved', total: 5 },
+            ],
+          },
+          revenue: {
+            totalRevenue: 2450.5,
+            completedPayments: 25,
+            paymentsByStatus: { completed: 25, pending: 4 },
+          },
+          jobs: { byStatus: { approved: 10 }, applications: 22 },
+          marketplace: {
+            listingsByStatus: { approved: 12 },
+            inquiries: 8,
+          },
+          advertisements: {
+            byStatus: { approved: 3 },
+            totalImpressions: 1200,
+            totalClicks: 72,
+            clickThroughRate: 6,
+          },
+          notifications: { byStatus: { sent: 18, failed: 2 } },
+        },
+      },
+    },
+  })
+  @HttpCode(HttpStatus.OK)
+  async getMvpReports() {
+    const result = await this.dashboardService.getMvpReports();
+
+    return {
+      message: 'MVP admin reports fetched successfully',
+      data: result,
+    };
+  }
 }

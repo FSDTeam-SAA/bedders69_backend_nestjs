@@ -18,6 +18,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
@@ -138,6 +139,7 @@ export class ContactController {
   @ApiOperation({
     summary: 'get contact by id',
   })
+  @ApiParam({ name: 'id', type: String, description: 'Contact ID' })
   async findContact(@Param('id') id: string) {
     const result = await this.contactService.getSingleContact(id);
 
@@ -153,6 +155,7 @@ export class ContactController {
     summary: 'update contact by id',
   })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Contact ID' })
   @ApiBody({ type: UpdateContactDto })
   @UseGuards(AuthGuard('admin'))
   async updateContact(
@@ -176,6 +179,7 @@ export class ContactController {
     summary: 'delete contact by id',
   })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Contact ID' })
   @UseGuards(AuthGuard('admin'))
   async deleteContact(@Param('id') id: string) {
     const result = await this.contactService.deleteContact(id);

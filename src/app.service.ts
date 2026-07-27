@@ -8,7 +8,8 @@ export class AppService {
       name: `${config.appName} API`,
       status: 'ok',
       databaseEnabled: config.isMongoEnabled,
-      swaggerUrl: `/api/docs`,
+      docsUrl: `/api/docs`,
+      openApiUrl: `/api/openapi.json`,
       version: '1.0.0',
     };
   }

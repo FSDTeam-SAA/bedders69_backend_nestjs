@@ -54,6 +54,10 @@ async function bootstrap() {
     logger: ['error', 'warn'],
   });
 
+  app.use('/favicon.ico', (_req, res: Response) => {
+    res.status(204).end();
+  });
+
   app.use('/api/v1/webhook', express.raw({ type: 'application/json' }));
 
   app.use(cookieParser());
@@ -63,7 +67,7 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix('api/v1', {
-    exclude: ['', 'favicon.ico'],
+    exclude: [''],
   });
 
   app.useGlobalPipes(

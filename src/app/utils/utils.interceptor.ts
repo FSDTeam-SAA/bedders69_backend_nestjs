@@ -13,6 +13,10 @@ export class UtilsInterceptor implements NestInterceptor {
     const res = context.switchToHttp().getResponse<Response>();
     return next.handle().pipe(
       map((response) => {
+        if (response == null) {
+          return response;
+        }
+
         if (
           response &&
           typeof response === 'object' &&

@@ -16,6 +16,10 @@ const buildUserModel = () => ({
   findById: jest.fn(),
 });
 
+const buildNotificationService = () => ({
+  notifyEmail: jest.fn().mockResolvedValue({ _id: 'notification-id' }),
+});
+
 const buildFindChain = (items: unknown[]) => ({
   populate: jest.fn().mockReturnThis(),
   skip: jest.fn().mockReturnThis(),
@@ -34,17 +38,30 @@ describe('JobApplicationService', () => {
       const applicationModel = buildJobApplicationModel();
       const jobModel = buildJobModel();
       const userModel = buildUserModel();
-      userModel.findById.mockReturnValue({
+      const notificationService = buildNotificationService();
+      userModel.findById.mockReturnValueOnce({
         lean: jest.fn().mockResolvedValue({
           _id: 'carer-id',
+          fullName: 'Carer One',
+          email: 'carer@example.com',
           role: 'carer',
           status: 'active',
+        }),
+      });
+      userModel.findById.mockReturnValueOnce({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue({
+          _id: 'org-id',
+          fullName: 'Care Org',
+          email: 'org@example.com',
         }),
       });
       jobModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
           _id: 'job-id',
           status: 'approved',
+          title: 'Care Assistant',
+          organizationUserId: 'org-id',
         }),
       });
       applicationModel.findOne.mockResolvedValue(null);
@@ -59,6 +76,7 @@ describe('JobApplicationService', () => {
         applicationModel as any,
         jobModel as any,
         userModel as any,
+        notificationService as any,
       );
 
       const result = await service.applyToJob(
@@ -78,6 +96,13 @@ describe('JobApplicationService', () => {
         _id: 'app-id',
         status: 'pending',
       });
+      expect(notificationService.notifyEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'job_application_created',
+          recipientEmail: 'org@example.com',
+          recipientUserId: 'org-id',
+        }),
+      );
     });
 
     it('prevents duplicate applications', async () => {
@@ -107,6 +132,7 @@ describe('JobApplicationService', () => {
         applicationModel as any,
         jobModel as any,
         userModel as any,
+        buildNotificationService() as any,
       );
 
       await expect(
@@ -134,6 +160,7 @@ describe('JobApplicationService', () => {
         applicationModel as any,
         jobModel as any,
         userModel as any,
+        buildNotificationService() as any,
       );
 
       await expect(
@@ -166,6 +193,7 @@ describe('JobApplicationService', () => {
         applicationModel as any,
         jobModel as any,
         userModel as any,
+        buildNotificationService() as any,
       );
 
       await expect(
@@ -200,6 +228,7 @@ describe('JobApplicationService', () => {
         applicationModel as any,
         jobModel as any,
         userModel as any,
+        buildNotificationService() as any,
       );
 
       const result = await service.getJobApplications('job-id', 'org-user-id', {
@@ -225,6 +254,7 @@ describe('JobApplicationService', () => {
         applicationModel as any,
         jobModel as any,
         userModel as any,
+        buildNotificationService() as any,
       );
 
       await expect(
@@ -262,6 +292,7 @@ describe('JobApplicationService', () => {
         applicationModel as any,
         jobModel as any,
         userModel as any,
+        buildNotificationService() as any,
       );
 
       const result = await service.updateApplicationStatus(
@@ -298,6 +329,7 @@ describe('JobApplicationService', () => {
         applicationModel as any,
         jobModel as any,
         userModel as any,
+        buildNotificationService() as any,
       );
 
       await expect(
@@ -330,6 +362,7 @@ describe('JobApplicationService', () => {
         applicationModel as any,
         jobModel as any,
         userModel as any,
+        buildNotificationService() as any,
       );
 
       const result = await service.withdrawApplication('app-id', 'carer-id');
@@ -354,6 +387,7 @@ describe('JobApplicationService', () => {
         applicationModel as any,
         jobModel as any,
         userModel as any,
+        buildNotificationService() as any,
       );
 
       await expect(

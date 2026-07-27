@@ -30,6 +30,7 @@ export class PaymentController {
     summary: 'Create payment intent for subscription',
   })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'subscribeId', description: 'Subscription plan ID' })
   @UseGuards(AuthGuard('user'))
   async paySubscribe(
     @Req() req: Request,
@@ -145,6 +146,7 @@ export class PaymentController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get payment by id' })
+  @ApiParam({ name: 'id', type: String, description: 'Payment ID' })
   @HttpCode(HttpStatus.OK)
   async getSinglePayment(@Param('id') id: string) {
     const result = await this.paymentService.getSinglePayment(id);

@@ -8,9 +8,11 @@ import { Job, JobSchema } from '../job/entities/job.entity';
 import { User, UserSchema } from '../user/entities/user.entity';
 import { JobApplicationController } from './job-application.controller';
 import { JobApplicationService } from './job-application.service';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
+    NotificationModule,
     MongooseModule.forFeature([
       { name: JobApplication.name, schema: JobApplicationSchema },
       { name: Job.name, schema: JobSchema },

@@ -26,6 +26,10 @@ const buildEntitlementModel = () => ({
   updateMany: jest.fn(),
 });
 
+const buildNotificationService = () => ({
+  notifyEmail: jest.fn().mockResolvedValue({ _id: 'notification-id' }),
+});
+
 const buildFindChain = (items: unknown[]) => ({
   select: jest.fn().mockReturnThis(),
   populate: jest.fn().mockReturnThis(),
@@ -46,12 +50,14 @@ const buildService = () => {
   const auditLogModel = buildAuditLogModel();
   const userModel = buildUserModel();
   const entitlementModel = buildEntitlementModel();
+  const notificationService = buildNotificationService();
   const service = new MarketplaceService(
     listingModel as any,
     inquiryModel as any,
     auditLogModel as any,
     userModel as any,
     entitlementModel as any,
+    notificationService as any,
   );
 
   return {
@@ -61,6 +67,7 @@ const buildService = () => {
     auditLogModel,
     userModel,
     entitlementModel,
+    notificationService,
   };
 };
 
@@ -357,10 +364,17 @@ describe('MarketplaceService', () => {
     });
 
     it('creates an inquiry and increments inquiry count', async () => {
-      const { service, listingModel, inquiryModel } = buildService();
+      const {
+        service,
+        listingModel,
+        inquiryModel,
+        userModel,
+        notificationService,
+      } = buildService();
       listingModel.findOne.mockReturnValue({
         lean: jest.fn().mockResolvedValue({
           _id: 'listing-id',
+          title: 'Care Bed',
           sellerUserId: 'seller-id',
         }),
       });
@@ -369,6 +383,14 @@ describe('MarketplaceService', () => {
         listingId: 'listing-id',
       });
       listingModel.findByIdAndUpdate.mockResolvedValue({});
+      userModel.findById.mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockResolvedValue({
+          _id: 'seller-id',
+          fullName: 'Seller',
+          email: 'seller@example.com',
+        }),
+      });
 
       const result = await service.createMarketplaceInquiry(
         'listing-id',
@@ -390,6 +412,13 @@ describe('MarketplaceService', () => {
       expect(listingModel.findByIdAndUpdate).toHaveBeenCalledWith(
         'listing-id',
         { $inc: { inquiryCount: 1 } },
+      );
+      expect(notificationService.notifyEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'marketplace_inquiry_created',
+          recipientEmail: 'seller@example.com',
+          recipientUserId: 'seller-id',
+        }),
       );
       expect(result).toMatchObject({ _id: 'inquiry-id' });
     });

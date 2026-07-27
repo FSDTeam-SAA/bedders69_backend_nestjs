@@ -10,7 +10,13 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import AuthGuard from 'src/app/middlewares/auth.guard';
 import { CreateMembershipPlanDto } from './dto/create-membership-plan.dto';
 import { UpdateMembershipPlanDto } from './dto/update-membership-plan.dto';
@@ -52,6 +58,7 @@ export class MembershipPlanController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update membership plan' })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Membership plan ID' })
   @ApiBody({ type: UpdateMembershipPlanDto })
   @UseGuards(AuthGuard('admin'))
   async update(
@@ -72,6 +79,7 @@ export class MembershipPlanController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete membership plan' })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Membership plan ID' })
   @UseGuards(AuthGuard('admin'))
   async remove(@Param('id') id: string) {
     const result = await this.membershipPlanService.remove(id);

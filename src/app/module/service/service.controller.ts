@@ -11,7 +11,13 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
 import AuthGuard from 'src/app/middlewares/auth.guard';
 import { CreateServiceDto } from './dto/create-service.dto';
@@ -57,6 +63,7 @@ export class ServiceController {
 
   @Get('provider/:providerId')
   @ApiOperation({ summary: 'Get services by provider id' })
+  @ApiParam({ name: 'providerId', type: String, description: 'Provider ID' })
   async getByProviderId(@Param('providerId') providerId: string) {
     const result = await this.serviceService.getByProviderId(providerId);
 
@@ -68,6 +75,7 @@ export class ServiceController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get single service' })
+  @ApiParam({ name: 'id', type: String, description: 'Service ID' })
   async findOne(@Param('id') id: string) {
     const result = await this.serviceService.findOne(id);
 
@@ -80,6 +88,7 @@ export class ServiceController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update service' })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Service ID' })
   @ApiBody({ type: UpdateServiceDto })
   @UseGuards(AuthGuard('service_provider'))
   async update(
@@ -102,6 +111,7 @@ export class ServiceController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete service' })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Service ID' })
   @UseGuards(AuthGuard('service_provider'))
   async remove(@Param('id') id: string, @Req() req: Request) {
     const result = await this.serviceService.remove(id, req.user!.id);

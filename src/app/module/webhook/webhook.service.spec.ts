@@ -1,7 +1,14 @@
 import { WebhookService } from './webhook.service';
 
 const buildUserModel = () => ({
-  findById: jest.fn(),
+  findById: jest.fn().mockReturnValue({
+    select: jest.fn().mockReturnThis(),
+    lean: jest.fn().mockResolvedValue({
+      _id: 'user-id',
+      fullName: 'Care User',
+      email: 'user@example.com',
+    }),
+  }),
 });
 
 const buildPaymentModel = () => ({
@@ -19,6 +26,10 @@ const buildPackageModel = () => ({
 const buildEntitlementModel = () => ({
   findOne: jest.fn(),
   create: jest.fn(),
+});
+
+const buildNotificationService = () => ({
+  notifyEmail: jest.fn().mockResolvedValue({ _id: 'notification-id' }),
 });
 
 const buildResponse = () =>
@@ -72,6 +83,7 @@ describe('WebhookService', () => {
       subscribeModel as any,
       packageModel as any,
       entitlementModel as any,
+      buildNotificationService() as any,
     );
 
     const event = {
@@ -130,6 +142,7 @@ describe('WebhookService', () => {
       subscribeModel as any,
       packageModel as any,
       entitlementModel as any,
+      buildNotificationService() as any,
     );
 
     const event = {
@@ -188,6 +201,7 @@ describe('WebhookService', () => {
       subscribeModel as any,
       packageModel as any,
       entitlementModel as any,
+      buildNotificationService() as any,
     );
 
     const event = {
@@ -228,6 +242,7 @@ describe('WebhookService', () => {
       subscribeModel as any,
       packageModel as any,
       entitlementModel as any,
+      buildNotificationService() as any,
     );
 
     const event = {

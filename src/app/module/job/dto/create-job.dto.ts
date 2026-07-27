@@ -9,6 +9,7 @@ import {
   Min,
 } from 'class-validator';
 import { JOB_TYPES } from '../entities/job.entity';
+import type { JobType } from '../entities/job.entity';
 
 export class CreateJobDto {
   @ApiProperty({ example: 'Senior Care Assistant' })
@@ -40,7 +41,7 @@ export class CreateJobDto {
   @ApiPropertyOptional({ enum: JOB_TYPES, example: 'full_time' })
   @IsOptional()
   @IsEnum(JOB_TYPES)
-  jobType?: string;
+  jobType?: JobType;
 
   @ApiPropertyOptional({ example: 22000 })
   @IsOptional()

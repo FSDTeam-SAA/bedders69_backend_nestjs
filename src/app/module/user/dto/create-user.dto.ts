@@ -9,6 +9,8 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
+import { USER_ROLES, USER_STATUSES } from '../entities/user.entity';
+import type { UserRole, UserStatus } from '../entities/user.entity';
 
 export class CreateUserDto {
   @ApiProperty({ example: '' })
@@ -24,28 +26,10 @@ export class CreateUserDto {
   @MinLength(6)
   password!: string;
 
-  @ApiPropertyOptional({
-    enum: [
-      'admin',
-      'care_company',
-      'agency',
-      'carer',
-      'supplier',
-      'service_provider',
-      'family',
-    ],
-  })
+  @ApiPropertyOptional({ enum: USER_ROLES })
   @IsOptional()
-  @IsEnum([
-    'admin',
-    'care_company',
-    'agency',
-    'carer',
-    'supplier',
-    'service_provider',
-    'family',
-  ])
-  role?: string;
+  @IsEnum(USER_ROLES)
+  role?: UserRole;
 
   @ApiPropertyOptional({ enum: ['male', 'female'] })
   @IsOptional()
@@ -102,10 +86,10 @@ export class CreateUserDto {
   })
   verifiedForget?: boolean;
 
-  @ApiPropertyOptional({ enum: ['active', 'suspended'] })
-  @IsString()
+  @ApiPropertyOptional({ enum: USER_STATUSES })
+  @IsEnum(USER_STATUSES)
   @IsOptional()
-  status?: string;
+  status?: UserStatus;
 
   @ApiPropertyOptional({ example: '' })
   @IsOptional()

@@ -19,6 +19,7 @@ import {
 } from './entities/advertisement.entity';
 import { CreateAdvertisementDto } from './dto/create-advertisement.dto';
 import { UpdateAdvertisementDto } from './dto/update-advertisement.dto';
+import { NotificationService } from '../notification/notification.service';
 
 type PopulatedAdvertisementEntitlement = EntitlementDocument & {
   package?: { type?: string };
@@ -38,6 +39,7 @@ export class AdvertisementService {
     private readonly userModel: Model<UserDocument>,
     @InjectModel(Entitlement.name)
     private readonly entitlementModel: Model<EntitlementDocument>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createAdvertisement(
@@ -168,6 +170,14 @@ export class AdvertisementService {
       reason,
     });
 
+    await this.notifyAdvertisementDecision(
+      advertisement,
+      'advertisement_approved',
+      actorUserId,
+      reason,
+      previousStatus,
+    );
+
     return {
       advertisementId,
       previousStatus,
@@ -208,6 +218,14 @@ export class AdvertisementService {
       nextStatus: 'rejected',
       reason,
     });
+
+    await this.notifyAdvertisementDecision(
+      advertisement,
+      'advertisement_rejected',
+      actorUserId,
+      reason,
+      previousStatus,
+    );
 
     return {
       advertisementId,
@@ -288,15 +306,15 @@ export class AdvertisementService {
 
   async getMyAdvertisements(advertiserUserId: string, options: IOptions) {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
-    const whereConditions = {
+    const whereConditions: Record<string, unknown> = {
       advertiserUserId,
       status: { $ne: 'deleted' },
     };
 
     const [total, advertisements] = await Promise.all([
-      this.advertisementModel.countDocuments(whereConditions),
+      this.advertisementModel.countDocuments(whereConditions as any),
       this.advertisementModel
-        .find(whereConditions)
+        .find(whereConditions as any)
         .skip(skip)
         .limit(limit)
         .sort({ [sortBy]: sortOrder })
@@ -430,7 +448,9 @@ export class AdvertisementService {
     }
   }
 
-  private getServableAdvertisementQuery(advertisementId: string) {
+  private getServableAdvertisementQuery(
+    advertisementId: string,
+  ): Record<string, unknown> {
     const now = new Date();
     return {
       _id: advertisementId,
@@ -439,6 +459,36 @@ export class AdvertisementService {
       startsAt: { $lte: now },
       endsAt: { $gte: now },
     };
+  }
+
+  private async notifyAdvertisementDecision(
+    advertisement: AdvertisementDocument,
+    event: 'advertisement_approved' | 'advertisement_rejected',
+    actorUserId: string,
+    reason: string | undefined,
+    previousStatus: string,
+  ) {
+    const advertiser = await this.userModel
+      .findById(advertisement.advertiserUserId)
+      .select('fullName email')
+      .lean();
+
+    await this.notificationService.notifyEmail({
+      event,
+      recipientEmail: (advertiser as any)?.email,
+      recipientName: (advertiser as any)?.fullName,
+      recipientUserId: String(advertisement.advertiserUserId),
+      templateData: {
+        advertisementTitle: advertisement.title,
+        reason,
+      },
+      metadata: {
+        advertisementId: String((advertisement as any)._id),
+        actorUserId,
+        previousStatus,
+        nextStatus: advertisement.status,
+      },
+    });
   }
 
   private toPublicAdvertisement(advertisement: any) {

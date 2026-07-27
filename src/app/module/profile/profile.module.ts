@@ -20,9 +20,11 @@ import {
   EntitlementSchema,
 } from '../entitlement/entities/entitlement.entity';
 import { Package, PackageSchema } from '../package/entities/package.entity';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
+    NotificationModule,
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: OrganizationProfile.name, schema: OrganizationProfileSchema },

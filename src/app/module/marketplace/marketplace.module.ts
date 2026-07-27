@@ -19,9 +19,11 @@ import {
 } from './entities/marketplace-listing.entity';
 import { MarketplaceController } from './marketplace.controller';
 import { MarketplaceService } from './marketplace.service';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
+    NotificationModule,
     MongooseModule.forFeature([
       { name: MarketplaceListing.name, schema: MarketplaceListingSchema },
       { name: MarketplaceInquiry.name, schema: MarketplaceInquirySchema },

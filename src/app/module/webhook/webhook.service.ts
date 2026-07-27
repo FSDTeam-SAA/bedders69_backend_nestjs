@@ -15,6 +15,7 @@ import {
   EntitlementDocument,
 } from '../entitlement/entities/entitlement.entity';
 import type { Response } from 'express';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class WebhookService {
@@ -36,6 +37,7 @@ export class WebhookService {
 
     @InjectModel(Entitlement.name)
     private readonly entitlementModel: Model<EntitlementDocument>,
+    private readonly notificationService: NotificationService,
   ) {
     if (config.stripe.secretKey) {
       this.stripe = new Stripe(config.stripe.secretKey);
@@ -101,6 +103,8 @@ export class WebhookService {
 
     payment.status = 'completed';
     await payment.save();
+
+    await this.notifyPayment(payment, 'payment_succeeded');
 
     const paymentType = intent.metadata?.paymentType ?? payment.paymentType;
 
@@ -200,8 +204,36 @@ export class WebhookService {
     if (payment) {
       payment.status = 'failed';
       await payment.save();
+      await this.notifyPayment(payment, 'payment_failed');
     }
 
     return res.json({ received: true });
+  }
+
+  private async notifyPayment(
+    payment: PaymentDocument,
+    event: 'payment_succeeded' | 'payment_failed',
+  ) {
+    const user = await this.userModel
+      .findById(payment.user)
+      .select('fullName email')
+      .lean();
+
+    await this.notificationService.notifyEmail({
+      event,
+      recipientEmail: (user as any)?.email,
+      recipientName: (user as any)?.fullName,
+      recipientUserId: String(payment.user),
+      templateData: {
+        amount: Number(payment.amount || 0),
+        currency: 'GBP',
+      },
+      metadata: {
+        paymentId: String(payment._id),
+        paymentType: payment.paymentType,
+        status: payment.status,
+        stripePaymentIntentId: payment.stripePaymentIntentId,
+      },
+    });
   }
 }

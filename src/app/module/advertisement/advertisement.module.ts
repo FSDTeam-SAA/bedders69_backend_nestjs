@@ -15,9 +15,11 @@ import {
   Advertisement,
   AdvertisementSchema,
 } from './entities/advertisement.entity';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
+    NotificationModule,
     MongooseModule.forFeature([
       { name: Advertisement.name, schema: AdvertisementSchema },
       { name: AdvertisementAuditLog.name, schema: AdvertisementAuditLogSchema },

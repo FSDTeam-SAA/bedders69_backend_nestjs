@@ -11,7 +11,13 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import type { Request } from 'express';
 import AuthGuard from 'src/app/middlewares/auth.guard';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -36,6 +42,7 @@ export class ProductController {
 
   @Get('category/:categoryId')
   @ApiOperation({ summary: 'Get products by category id' })
+  @ApiParam({ name: 'categoryId', type: String, description: 'Category ID' })
   async findByCategory(@Param('categoryId') categoryId: string) {
     const result = await this.productService.findByCategory(categoryId);
 
@@ -47,6 +54,7 @@ export class ProductController {
 
   @Get('supplier/:supplierId')
   @ApiOperation({ summary: 'Get products by supplier id' })
+  @ApiParam({ name: 'supplierId', type: String, description: 'Supplier ID' })
   async findBySupplierId(@Param('supplierId') supplierId: string) {
     const result = await this.productService.findBySupplierId(supplierId);
 
@@ -58,6 +66,7 @@ export class ProductController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get single product' })
+  @ApiParam({ name: 'id', type: String, description: 'Product ID' })
   async findOne(@Param('id') id: string) {
     const result = await this.productService.findOne(id);
 
@@ -91,6 +100,7 @@ export class ProductController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update product' })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Product ID' })
   @ApiBody({ type: UpdateProductDto })
   @UseGuards(AuthGuard('supplier'))
   async update(
@@ -113,6 +123,7 @@ export class ProductController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete product' })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'id', type: String, description: 'Product ID' })
   @UseGuards(AuthGuard('supplier'))
   async remove(@Param('id') id: string, @Req() req: Request) {
     const result = await this.productService.remove(id, req.user!.id);

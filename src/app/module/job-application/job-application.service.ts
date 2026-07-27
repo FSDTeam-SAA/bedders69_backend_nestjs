@@ -10,6 +10,7 @@ import {
   JobApplicationDocument,
   JobApplicationStatus,
 } from './entities/job-application.entity';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class JobApplicationService {
@@ -20,6 +21,7 @@ export class JobApplicationService {
     private readonly jobModel: Model<JobDocument>,
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async applyToJob(carerUserId: string, jobId: string, coverLetter?: string) {
@@ -71,6 +73,27 @@ export class JobApplicationService {
       coverLetter,
       status: 'pending',
       appliedAt: new Date(),
+    });
+
+    const organization = await this.userModel
+      .findById(job.organizationUserId)
+      .select('fullName email')
+      .lean();
+
+    await this.notificationService.notifyEmail({
+      event: 'job_application_created',
+      recipientEmail: (organization as any)?.email,
+      recipientName: (organization as any)?.fullName,
+      recipientUserId: String(job.organizationUserId),
+      templateData: {
+        jobTitle: job.title,
+        applicantName: user.fullName || user.email,
+      },
+      metadata: {
+        jobId,
+        applicationId: String((application as any)._id),
+        carerUserId,
+      },
     });
 
     return application;

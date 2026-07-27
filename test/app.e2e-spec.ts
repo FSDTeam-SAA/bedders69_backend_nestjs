@@ -32,4 +32,8 @@ describe('AppController (e2e)', () => {
         version: '1.0.0',
       });
   });
+
+  it('/favicon.ico (GET)', () => {
+    return request(app.getHttpServer()).get('/favicon.ico').expect(204);
+  });
 });

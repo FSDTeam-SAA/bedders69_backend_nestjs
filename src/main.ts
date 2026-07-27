@@ -63,7 +63,7 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix('api/v1', {
-    exclude: [''],
+    exclude: ['', 'favicon.ico'],
   });
 
   app.useGlobalPipes(

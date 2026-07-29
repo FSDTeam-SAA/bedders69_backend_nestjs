@@ -20,6 +20,7 @@ const buildJwtService = () => ({
 const buildResponse = () =>
   ({
     cookie: jest.fn(),
+    clearCookie: jest.fn(),
   }) as unknown as Response;
 
 describe('AuthService', () => {
@@ -130,7 +131,97 @@ describe('AuthService', () => {
     expect(cookieMock).toHaveBeenCalledWith(
       'refreshToken',
       'signed-token',
-      expect.objectContaining({ httpOnly: true }),
+      expect.objectContaining({ httpOnly: true, secure: false }),
+    );
+  });
+
+  it('refreshes access tokens from a valid refresh cookie', async () => {
+    const userModel = buildUserModel();
+    userModel.findById.mockResolvedValue({
+      _id: 'user-id',
+      email: 'family@example.com',
+      role: 'family',
+      status: 'active',
+      toObject: () => ({
+        _id: 'user-id',
+        email: 'family@example.com',
+        role: 'family',
+        status: 'active',
+        password: 'hashed-password',
+        otp: '123456',
+      }),
+    });
+    const jwtService = {
+      sign: jest.fn().mockReturnValue('next-token'),
+      verify: jest.fn().mockReturnValue({ id: 'user-id' }),
+    };
+    const response = buildResponse();
+    const service = new AuthService(userModel as any, jwtService as any);
+
+    const result = await service.refreshToken(
+      { cookies: { refreshToken: 'refresh-token' } } as any,
+      response,
+    );
+
+    expect(jwtService.verify).toHaveBeenCalledWith('refresh-token', {
+      secret: expect.any(String),
+    });
+    expect(result).toMatchObject({
+      accessToken: 'next-token',
+      user: {
+        _id: 'user-id',
+        email: 'family@example.com',
+        role: 'family',
+        status: 'active',
+      },
+    });
+    expect(result.user).not.toHaveProperty('password');
+    expect(result.user).not.toHaveProperty('otp');
+    expect(response.cookie).toHaveBeenCalledWith(
+      'refreshToken',
+      'next-token',
+      expect.objectContaining({ httpOnly: true, secure: false }),
+    );
+  });
+
+  it('blocks refresh when the account is no longer active', async () => {
+    const userModel = buildUserModel();
+    userModel.findById.mockResolvedValue({
+      _id: 'user-id',
+      email: 'family@example.com',
+      role: 'family',
+      status: 'suspended',
+    });
+    const jwtService = {
+      sign: jest.fn(),
+      verify: jest.fn().mockReturnValue({ id: 'user-id' }),
+    };
+    const service = new AuthService(userModel as any, jwtService as any);
+
+    await expect(
+      service.refreshToken(
+        { cookies: { refreshToken: 'refresh-token' } } as any,
+        buildResponse(),
+      ),
+    ).rejects.toMatchObject<HttpException>({
+      message: 'Account is not active',
+    });
+    expect(jwtService.sign).not.toHaveBeenCalled();
+  });
+
+  it('clears the refresh token cookie on logout', () => {
+    const service = new AuthService(
+      buildUserModel() as any,
+      buildJwtService() as any,
+    );
+    const response = buildResponse();
+
+    const result = service.logout(response);
+
+    expect(result).toEqual({ message: 'Logged out successfully' });
+    expect(response.clearCookie).toHaveBeenCalledWith(
+      'refreshToken',
+      expect.objectContaining({ httpOnly: true, secure: false }),
     );
   });
 });

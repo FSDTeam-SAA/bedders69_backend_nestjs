@@ -3,7 +3,7 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { User, UserDocument } from '../user/entities/user.entity';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import * as bcrypt from 'bcrypt';
 import * as jwt from '@nestjs/jwt';
 import config from '../../config';
@@ -39,6 +39,37 @@ export class AuthService {
     return safeUser;
   }
 
+  private buildTokenPayload(user: {
+    _id?: unknown;
+    id?: unknown;
+    email?: string;
+    role?: string;
+    status?: string;
+  }) {
+    return {
+      id: String(user._id ?? user.id),
+      email: user.email,
+      role: user.role,
+      status: user.status,
+    };
+  }
+
+  private setRefreshTokenCookie(res: Response, refreshToken: string) {
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: config.env === 'production',
+      sameSite: 'strict',
+    });
+  }
+
+  private clearRefreshTokenCookie(res: Response) {
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: config.env === 'production',
+      sameSite: 'strict',
+    });
+  }
+
   async register(CreateAuthDto: CreateAuthDto) {
     const user = await this.userModel.findOne({ email: CreateAuthDto.email });
     if (user) {
@@ -70,37 +101,70 @@ export class AuthService {
       throw new HttpException('Account is not active', 403);
     }
 
+    const tokenPayload = this.buildTokenPayload({
+      _id: user._id ?? safeUser?._id,
+      email: user.email ?? (safeUser?.email as string | undefined),
+      role: user.role ?? (safeUser?.role as string | undefined),
+      status: status as string | undefined,
+    });
+
     const accessToken = this.jwtService.sign(
-      {
-        id: user._id ?? safeUser?._id,
-        email: user.email ?? safeUser?.email,
-        role: user.role ?? safeUser?.role,
-        status,
-      },
+      tokenPayload,
       {
         secret: config.jwt.accessTokenSecret,
         expiresIn: config.jwt.accessTokenExpires as any,
       } as jwt.JwtSignOptions,
     );
     const refreshToken = this.jwtService.sign(
-      {
-        id: user._id ?? safeUser?._id,
-        email: user.email ?? safeUser?.email,
-        role: user.role ?? safeUser?.role,
-        status,
-      },
+      tokenPayload,
       {
         secret: config.jwt.refreshTokenSecret,
         expiresIn: config.jwt.refreshTokenExpires as any,
       } as jwt.JwtSignOptions,
     );
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-    });
+    this.setRefreshTokenCookie(res, refreshToken);
 
     return { accessToken, user: safeUser };
+  }
+
+  async refreshToken(req: Request, res: Response) {
+    const refreshToken = req.cookies?.refreshToken as string | undefined;
+    if (!refreshToken) {
+      throw new HttpException('Refresh token missing', 401);
+    }
+
+    const decoded = this.jwtService.verify<{
+      id: string;
+      email: string;
+      role: string;
+      status?: string;
+    }>(refreshToken, {
+      secret: config.jwt.refreshTokenSecret,
+    });
+
+    const user = await this.userModel.findById(decoded.id);
+    if (!user) throw new HttpException('User not found', 404);
+    if (user.status !== 'active') {
+      throw new HttpException('Account is not active', 403);
+    }
+
+    const tokenPayload = this.buildTokenPayload(user);
+    const accessToken = this.jwtService.sign(tokenPayload, {
+      secret: config.jwt.accessTokenSecret,
+      expiresIn: config.jwt.accessTokenExpires as any,
+    } as jwt.JwtSignOptions);
+    const nextRefreshToken = this.jwtService.sign(tokenPayload, {
+      secret: config.jwt.refreshTokenSecret,
+      expiresIn: config.jwt.refreshTokenExpires as any,
+    } as jwt.JwtSignOptions);
+    this.setRefreshTokenCookie(res, nextRefreshToken);
+
+    return { accessToken, user: this.sanitizeUser(user) };
+  }
+
+  logout(res: Response) {
+    this.clearRefreshTokenCookie(res);
+    return { message: 'Logged out successfully' };
   }
 
   async forgotPassword(email: string) {

@@ -19,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 import AuthGuard from 'src/app/middlewares/auth.guard';
 import pick from 'src/app/helpers/pick';
+import { USER_ROLES } from '../user/entities/user.entity';
 
 @ApiTags('payment')
 @Controller('payment')
@@ -31,7 +32,7 @@ export class PaymentController {
   })
   @ApiBearerAuth('access-token')
   @ApiParam({ name: 'subscribeId', description: 'Subscription plan ID' })
-  @UseGuards(AuthGuard('user'))
+  @UseGuards(AuthGuard(...USER_ROLES))
   async paySubscribe(
     @Req() req: Request,
     @Param('subscribeId') subscribeId: string,
@@ -147,6 +148,8 @@ export class PaymentController {
   @Get(':id')
   @ApiOperation({ summary: 'Get payment by id' })
   @ApiParam({ name: 'id', type: String, description: 'Payment ID' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('admin'))
   @HttpCode(HttpStatus.OK)
   async getSinglePayment(@Param('id') id: string) {
     const result = await this.paymentService.getSinglePayment(id);

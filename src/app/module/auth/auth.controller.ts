@@ -23,6 +23,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConflictResponse,
+  ApiCookieAuth,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
@@ -236,6 +237,70 @@ export class AuthController {
     );
     return {
       message: 'Password changed successfully',
+      data: result,
+    };
+  }
+
+  @Post('refresh-token')
+  @ApiCookieAuth('refreshToken')
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description:
+      'Uses the HTTP-only refresh-token cookie to issue a fresh access token.',
+  })
+  @ApiOkResponse({
+    description: 'Access token refreshed successfully',
+    schema: {
+      example: {
+        success: true,
+        message: 'Access token refreshed successfully',
+        data: {
+          accessToken: 'jwt-access-token',
+          user: {
+            _id: '65f1c9f234df3c9342a58f00',
+            email: 'saurav@example.com',
+            role: 'family',
+            status: 'active',
+          },
+        },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({ description: 'Refresh token missing or invalid' })
+  @HttpCode(HttpStatus.OK)
+  async refreshToken(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.refreshToken(req, res);
+    return {
+      message: 'Access token refreshed successfully',
+      data: result,
+    };
+  }
+
+  @Post('logout')
+  @ApiOperation({
+    summary: 'Logout user',
+    description: 'Clears the HTTP-only refresh-token cookie.',
+  })
+  @ApiOkResponse({
+    description: 'Logged out successfully',
+    schema: {
+      example: {
+        success: true,
+        message: 'Logged out successfully',
+        data: {
+          message: 'Logged out successfully',
+        },
+      },
+    },
+  })
+  @HttpCode(HttpStatus.OK)
+  async logout(@Res({ passthrough: true }) res: Response) {
+    const result = this.authService.logout(res);
+    return {
+      message: 'Logged out successfully',
       data: result,
     };
   }

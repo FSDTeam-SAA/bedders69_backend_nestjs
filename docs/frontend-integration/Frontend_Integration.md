@@ -13,6 +13,16 @@ This directory is the AI-agent-friendly source of truth for frontend API integra
 - Standard successful responses are normally wrapped as `{ statusCode, success, message, meta, data }`; errors use `{ success: false, statusCode, message, errorSources }`.
 - DTO source files are next to each controller in `src/app/module/<module>/dto/`. Use those decorators as the authoritative field-validation definition when creating request types.
 
+## Response schemas and examples
+
+Use these files for the complete route inventory and exact role access. For the exact request body, query/path fields, response schemas, examples, content types, and status codes of a specific endpoint, use the backend's generated OpenAPI contract:
+
+- Scalar UI: `{API_URL}/api/docs`
+- OpenAPI JSON: `{API_URL}/api/openapi.json`
+
+An AI agent should first find the endpoint and allowed role in this directory, then consult `/api/openapi.json` (or Scalar) before implementing its request and response types. The OpenAPI document is generated from the active controllers and DTO decorators, so it is the authoritative schema source.
+
+
 ## Files
 
 - [Authentication and accounts](01-auth-and-accounts.md)

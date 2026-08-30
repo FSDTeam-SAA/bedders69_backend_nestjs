@@ -83,7 +83,7 @@ const parseJsonArray = (value: unknown): unknown => {
   }
 
   if (value.trim() === '') {
-    return [];
+    return undefined;
   }
 
   try {
@@ -95,6 +95,10 @@ const parseJsonArray = (value: unknown): unknown => {
 };
 
 const parseLocation = (value: unknown): unknown => {
+  if (typeof value === 'string' && value.trim() === '') {
+    return undefined;
+  }
+
   let location: unknown;
 
   try {
@@ -123,7 +127,7 @@ const parseLocation = (value: unknown): unknown => {
   return location;
 };
 
-class LocationDto {
+export class LocationDto {
   @ApiProperty({
     example: 'Point',
     enum: ['Point'],
@@ -141,7 +145,7 @@ class LocationDto {
   coordinates!: [number, number];
 }
 
-class ExperienceDto {
+export class ExperienceDto {
   @ApiPropertyOptional({ example: 'Bedders Care Ltd' })
   @IsOptional()
   @IsString()
@@ -252,6 +256,21 @@ export class CreateCareDto {
   })
   @IsString()
   postCode!: string;
+
+  @ApiPropertyOptional({ example: 'Jane Smith' })
+  @IsOptional()
+  @IsString()
+  emergencyContactName?: string;
+
+  @ApiPropertyOptional({ example: 'Sibling' })
+  @IsOptional()
+  @IsString()
+  emergencyContactRelationship?: string;
+
+  @ApiPropertyOptional({ example: '+447700900124' })
+  @IsOptional()
+  @IsString()
+  emergencyContactPhoneNumber?: string;
 
   @ApiProperty({
     example: { latitude: 51.5074, longitude: -0.1278 },

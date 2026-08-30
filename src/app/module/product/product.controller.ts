@@ -10,19 +10,34 @@ import {
   Post,
   Req,
   UseGuards,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
 import AuthGuard from 'src/app/middlewares/auth.guard';
+import { fileUpload } from 'src/app/helpers/fileUploder';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductService } from './product.service';
+
+const productImageUploadConfig = {
+  ...fileUpload.uploadConfig,
+  limits: { fileSize: 5 * 1024 * 1024, files: 5 },
+  fileFilter: (
+    _req: unknown,
+    file: Express.Multer.File,
+    callback: (error: Error | null, acceptFile: boolean) => void,
+  ) => callback(null, file.mimetype.startsWith('image/')),
+};
 
 @ApiTags('product')
 @Controller('products')
@@ -80,15 +95,19 @@ export class ProductController {
   @ApiOperation({ summary: 'Create product' })
   @ApiBearerAuth('access-token')
   @ApiBody({ type: CreateProductDto })
+  @ApiConsumes('multipart/form-data')
   @UseGuards(AuthGuard('supplier'))
+  @UseInterceptors(FilesInterceptor('photos', 5, productImageUploadConfig))
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Body() createProductDto: CreateProductDto,
     @Req() req: Request,
+    @UploadedFiles() files?: Express.Multer.File[],
   ) {
     const result = await this.productService.create(
       createProductDto,
       req.user!.id,
+      files,
     );
 
     return {
@@ -102,16 +121,20 @@ export class ProductController {
   @ApiBearerAuth('access-token')
   @ApiParam({ name: 'id', type: String, description: 'Product ID' })
   @ApiBody({ type: UpdateProductDto })
+  @ApiConsumes('multipart/form-data')
   @UseGuards(AuthGuard('supplier'))
+  @UseInterceptors(FilesInterceptor('photos', 5, productImageUploadConfig))
   async update(
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
     @Req() req: Request,
+    @UploadedFiles() files?: Express.Multer.File[],
   ) {
     const result = await this.productService.update(
       id,
       updateProductDto,
       req.user!.id,
+      files,
     );
 
     return {

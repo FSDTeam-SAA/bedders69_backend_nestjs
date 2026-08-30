@@ -1,6 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { fileUpload } from 'src/app/helpers/fileUploder';
 import {
   ProductCategory,
   ProductCategoryDocument,
@@ -18,7 +19,11 @@ export class ProductService {
     private readonly productCategoryModel: Model<ProductCategoryDocument>,
   ) {}
 
-  async create(createProductDto: CreateProductDto, supplierId: string) {
+  async create(
+    createProductDto: CreateProductDto,
+    supplierId: string,
+    files?: Express.Multer.File[],
+  ) {
     const category = await this.productCategoryModel.findOne({
       _id: createProductDto.categoryId,
       supplierId,
@@ -28,9 +33,18 @@ export class ProductService {
       throw new HttpException('Category not found or access denied', 404);
     }
 
+    const photo = files?.length
+      ? await Promise.all(
+          files.map((file) =>
+            fileUpload.uploadToCloudinary(file).then(({ url }) => url),
+          ),
+        )
+      : createProductDto.photo;
+
     return this.productModel.create({
       ...createProductDto,
       supplierId,
+      ...(photo ? { photo } : {}),
     });
   }
 
@@ -59,6 +73,7 @@ export class ProductService {
     id: string,
     updateProductDto: UpdateProductDto,
     supplierId: string,
+    files?: Express.Multer.File[],
   ) {
     if (updateProductDto.categoryId) {
       const category = await this.productCategoryModel.findOne({
@@ -71,9 +86,17 @@ export class ProductService {
       }
     }
 
+    const photo = files?.length
+      ? await Promise.all(
+          files.map((file) =>
+            fileUpload.uploadToCloudinary(file).then(({ url }) => url),
+          ),
+        )
+      : updateProductDto.photo;
+
     const result = await this.productModel.findOneAndUpdate(
       { _id: id, supplierId },
-      updateProductDto,
+      { ...updateProductDto, ...(photo ? { photo } : {}) },
       { new: true },
     );
 

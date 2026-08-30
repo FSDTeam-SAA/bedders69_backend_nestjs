@@ -70,6 +70,15 @@ export class Care {
   @Prop()
   postCode!: string;
 
+  @Prop()
+  emergencyContactName!: string;
+
+  @Prop()
+  emergencyContactRelationship!: string;
+
+  @Prop()
+  emergencyContactPhoneNumber!: string;
+
   @Prop({ type: LocationSchema })
   location!: {
     type: 'Point';

@@ -169,6 +169,30 @@ export class JobController {
     return { message: 'Job fetched successfully', data: result };
   }
 
+  @Post('save-job/:id')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('carer'))
+  async saveJob(@Param('id') id: string, @Req() req: Request) {
+    const result = await this.jobService.saveJob(req.user!.id, id);
+    return { message: 'Job saved successfully', data: result };
+  }
+
+  @Get('get-my-saved-jobs')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('carer'))
+  async getMySavedJobs(@Req() req: Request) {
+    const result = await this.jobService.getSavedJobs(req.user!.id);
+    return { message: 'Saved jobs fetched successfully', data: result };
+  }
+
+  @Patch('unsave-job/:id')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('carer'))
+  async unsaveJob(@Param('id') id: string, @Req() req: Request) {
+    const result = await this.jobService.removeSavedJob(req.user!.id, id);
+    return { message: 'Job removed from saved jobs', data: result };
+  }
+
   @Get('admin/get-jobs')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))

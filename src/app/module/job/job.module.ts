@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Job, JobSchema } from './entities/job.entity';
+import { SavedJob, SavedJobSchema } from './entities/saved-job.entity';
 import {
   JobAuditLog,
   JobAuditLogSchema,
@@ -17,6 +18,7 @@ import {
   imports: [
     MongooseModule.forFeature([
       { name: Job.name, schema: JobSchema },
+      { name: SavedJob.name, schema: SavedJobSchema },
       { name: JobAuditLog.name, schema: JobAuditLogSchema },
       { name: User.name, schema: UserSchema },
       { name: Entitlement.name, schema: EntitlementSchema },

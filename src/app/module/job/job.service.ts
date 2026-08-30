@@ -11,6 +11,7 @@ import {
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { Job, JobDocument } from './entities/job.entity';
+import { SavedJob, SavedJobDocument } from './entities/saved-job.entity';
 import {
   JobAuditLog,
   JobAuditLogDocument,
@@ -21,6 +22,8 @@ export class JobService {
   constructor(
     @InjectModel(Job.name)
     private readonly jobModel: Model<JobDocument>,
+    @InjectModel(SavedJob.name)
+    private readonly savedJobModel: Model<SavedJobDocument>,
     @InjectModel(User.name)
     private readonly userModel: Model<UserDocument>,
     @InjectModel(JobAuditLog.name)
@@ -28,6 +31,30 @@ export class JobService {
     @InjectModel(Entitlement.name)
     private readonly entitlementModel: Model<EntitlementDocument>,
   ) {}
+
+  async saveJob(carerUserId: string, jobId: string) {
+    const job = await this.jobModel.findOne({ _id: jobId, status: 'approved' });
+    if (!job) throw new HttpException('Job not found', HttpStatus.NOT_FOUND);
+    await this.savedJobModel.updateOne(
+      { carerUserId, jobId },
+      { $setOnInsert: { carerUserId, jobId } },
+      { upsert: true },
+    );
+    return { jobId, saved: true };
+  }
+
+  async getSavedJobs(carerUserId: string) {
+    return this.savedJobModel
+      .find({ carerUserId })
+      .sort({ createdAt: -1 })
+      .populate('jobId')
+      .lean();
+  }
+
+  async removeSavedJob(carerUserId: string, jobId: string) {
+    await this.savedJobModel.deleteOne({ carerUserId, jobId });
+    return { jobId, saved: false };
+  }
 
   async createJob(organizationUserId: string, dto: CreateJobDto) {
     const user = await this.userModel.findById(organizationUserId).lean();

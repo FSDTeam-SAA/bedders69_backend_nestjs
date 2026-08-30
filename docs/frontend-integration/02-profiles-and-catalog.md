@@ -35,8 +35,8 @@ All paths include the `/api/v1` prefix.
 | GET | `/products/category/:categoryId` | Public | List products in a category. |
 | GET | `/products/supplier/:supplierId` | Public | List products by supplier. |
 | GET | `/products/:id` | Public | Get one product. |
-| POST | `/products` | `supplier` | Create product. |
-| PATCH | `/products/:id` | `supplier` | Update product. |
+| POST | `/products` | `supplier` | Create product; send `multipart/form-data` and up to five `photos` image files (5 MB each). |
+| PATCH | `/products/:id` | `supplier` | Update product; optionally replace its photos with up to five uploaded `photos` image files. |
 | DELETE | `/products/:id` | `supplier` | Delete product. |
 | GET | `/product-categories` | Public | List categories. |
 | GET | `/product-categories/supplier/:supplierId` | Public | List a supplier's categories. |

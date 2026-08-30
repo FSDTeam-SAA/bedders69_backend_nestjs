@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Patch,
   Post,
   Req,
@@ -19,14 +21,22 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Request } from 'express';
+import pick from 'src/app/helpers/pick';
 import { fileUpload } from '../../helpers/fileUploder';
 import AuthGuard from '../../middlewares/auth.guard';
 import { CompanyService } from './company.service';
+import {
+  CreateContactRequestDto,
+  UpdateContactRequestStatusDto,
+} from './dto/create-contact-request.dto';
 import { CreateCompanyDto } from './dto/create-company.dto';
+import { CreateSavedCarerDto } from './dto/create-saved-carer.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 
 @ApiTags('Company')
@@ -166,6 +176,140 @@ export class CompanyController {
     );
     return {
       message: 'Care company profile updated successfully',
+      data: result,
+    };
+  }
+
+  @Post('save-carer')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @ApiOperation({ summary: 'Save/Bookmark a carer' })
+  @ApiBody({ type: CreateSavedCarerDto })
+  @HttpCode(HttpStatus.CREATED)
+  async saveCarer(@Req() req: Request, @Body() dto: CreateSavedCarerDto) {
+    const result = await this.companyService.saveCarer(req.user!.id, dto);
+    return {
+      message: 'Carer saved successfully',
+      data: result,
+    };
+  }
+
+  @Get('get-saved-carers')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @ApiOperation({ summary: 'Get all saved carers for current company' })
+  @HttpCode(HttpStatus.OK)
+  async getSavedCarers(@Req() req: Request) {
+    const result = await this.companyService.getSavedCarers(req.user!.id);
+    return {
+      message: 'Saved carers fetched successfully',
+      data: result,
+    };
+  }
+
+  @Get('get-saved-carers/:carerId')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @ApiOperation({ summary: 'Get a specific saved carer detail' })
+  @ApiParam({ name: 'carerId', type: String })
+  @HttpCode(HttpStatus.OK)
+  async getSavedCarerById(@Req() req: Request, @Param('carerId') carerId: string) {
+    const result = await this.companyService.getSavedCarerById(req.user!.id, carerId);
+    return {
+      message: 'Saved carer detail fetched successfully',
+      data: result,
+    };
+  }
+
+  @Delete('remove-saved-carer/:carerId')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @ApiOperation({ summary: 'Remove a carer from saved list' })
+  @ApiParam({ name: 'carerId', type: String })
+  @HttpCode(HttpStatus.OK)
+  async removeSavedCarer(@Req() req: Request, @Param('carerId') carerId: string) {
+    const result = await this.companyService.removeSavedCarer(req.user!.id, carerId);
+    return result;
+  }
+
+  @Get('get-contact-requests')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @ApiOperation({ summary: 'Get inbound contact requests for company' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
+  @HttpCode(HttpStatus.OK)
+  async getContactRequests(@Req() req: Request) {
+    const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+    const status = req.query.status as string | undefined;
+    const result = await this.companyService.getContactRequests(
+      req.user!.id,
+      options,
+      status,
+    );
+    return {
+      message: 'Contact requests fetched successfully',
+      meta: result.meta,
+      counts: result.counts,
+      data: result.data,
+    };
+  }
+
+  @Post('create-contact-request')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @ApiOperation({ summary: 'Create a contact request' })
+  @ApiBody({ type: CreateContactRequestDto })
+  @HttpCode(HttpStatus.CREATED)
+  async createContactRequest(
+    @Req() req: Request,
+    @Body() dto: CreateContactRequestDto,
+  ) {
+    const result = await this.companyService.createContactRequest(
+      req.user!.id,
+      dto,
+    );
+    return {
+      message: 'Contact request created successfully',
+      data: result,
+    };
+  }
+
+  @Patch('update-contact-request/:id')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @ApiOperation({ summary: 'Update contact request status (Accepted/Rejected)' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiBody({ type: UpdateContactRequestStatusDto })
+  @HttpCode(HttpStatus.OK)
+  async updateContactRequestStatus(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() dto: UpdateContactRequestStatusDto,
+  ) {
+    const result = await this.companyService.updateContactRequestStatus(
+      req.user!.id,
+      id,
+      dto.status,
+    );
+    return {
+      message: 'Contact request status updated successfully',
+      data: result,
+    };
+  }
+
+  @Get('dashboard-overview')
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @ApiOperation({ summary: 'Get dashboard overview statistics and recent applicants' })
+  @HttpCode(HttpStatus.OK)
+  async getDashboardOverview(@Req() req: Request) {
+    const result = await this.companyService.getDashboardOverview(req.user!.id);
+    return {
+      message: 'Dashboard overview fetched successfully',
       data: result,
     };
   }

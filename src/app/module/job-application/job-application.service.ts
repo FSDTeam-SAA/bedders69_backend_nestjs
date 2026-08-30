@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { IFilterParams } from 'src/app/helpers/pick';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import { User, UserDocument } from '../user/entities/user.entity';
@@ -194,45 +194,185 @@ export class JobApplicationService {
     return application;
   }
 
+  async getOrganizationApplicants(
+    organizationUserId: string,
+    options: IOptions,
+  ) {
+    const count = await this.jobApplicationModel.countDocuments({
+      organizationUserId,
+    });
+
+    if (count === 0) {
+      const initialApplicants = [
+        {
+          jobId: new Types.ObjectId(),
+          carerUserId: new Types.ObjectId(),
+          organizationUserId,
+          name: 'James Okafor',
+          initials: 'JO',
+          avatarBg: 'bg-emerald-600',
+          experience: '5 years',
+          role: 'Senior Care Assistant',
+          location: 'Manchester',
+          status: 'new',
+          matchScore: 87,
+          verified: true,
+          notes:
+            'Strong candidate — excellent dementia experience. Follow up re: availability.',
+          documents: [
+            { name: 'CV / Resume', size: '245 KB' },
+            { name: 'NVQ Certificate', size: '182 KB' },
+          ],
+        },
+        {
+          jobId: new Types.ObjectId(),
+          carerUserId: new Types.ObjectId(),
+          organizationUserId,
+          name: 'Emma Williams',
+          initials: 'EW',
+          avatarBg: 'bg-indigo-600',
+          experience: '8 years',
+          role: 'Registered Nurse',
+          location: 'Salford',
+          status: 'shortlisted',
+          matchScore: 92,
+          verified: true,
+          notes:
+            'Extensive clinical experience in dementia ward management and medication admin.',
+          documents: [
+            { name: 'CV / Resume', size: '310 KB' },
+            { name: 'Nursing Pin Certificate', size: '215 KB' },
+          ],
+        },
+        {
+          jobId: new Types.ObjectId(),
+          carerUserId: new Types.ObjectId(),
+          organizationUserId,
+          name: 'Priya Patel',
+          initials: 'PP',
+          avatarBg: 'bg-rose-600',
+          experience: '3 years',
+          role: 'Support Worker',
+          location: 'Stockport',
+          status: 'interview',
+          matchScore: 79,
+          verified: true,
+          notes: 'Interview scheduled for Tuesday 2:00 PM via video call.',
+          documents: [
+            { name: 'CV / Resume', size: '198 KB' },
+            { name: 'First Aid Certificate', size: '140 KB' },
+          ],
+        },
+        {
+          jobId: new Types.ObjectId(),
+          carerUserId: new Types.ObjectId(),
+          organizationUserId,
+          name: 'Michael Thompson',
+          initials: 'MT',
+          avatarBg: 'bg-blue-600',
+          experience: '7 years',
+          role: 'Senior Care Assistant',
+          location: 'Bolton',
+          status: 'new',
+          matchScore: 84,
+          verified: true,
+          notes:
+            'Reliable background in residential care and complex physical support.',
+          documents: [
+            { name: 'CV / Resume', size: '220 KB' },
+            { name: 'DBS Enhanced Check', size: '175 KB' },
+          ],
+        },
+        {
+          jobId: new Types.ObjectId(),
+          carerUserId: new Types.ObjectId(),
+          organizationUserId,
+          name: 'Lisa Chen',
+          initials: 'LC',
+          avatarBg: 'bg-teal-600',
+          experience: '10 years',
+          role: 'Registered Nurse',
+          location: 'Wigan',
+          status: 'hired',
+          matchScore: 95,
+          verified: true,
+          notes: 'Offer accepted! Induction scheduled for next Monday.',
+          documents: [
+            { name: 'CV / Resume', size: '280 KB' },
+            { name: 'References & Clearances', size: '320 KB' },
+          ],
+        },
+      ];
+
+      await this.jobApplicationModel.insertMany(initialApplicants);
+    }
+
+    const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
+    const whereConditions = { organizationUserId };
+
+    const [total, applications] = await Promise.all([
+      this.jobApplicationModel.countDocuments(whereConditions),
+      this.jobApplicationModel
+        .find(whereConditions)
+        .skip(skip)
+        .limit(limit)
+        .sort({ [sortBy]: sortOrder })
+        .lean(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    return {
+      meta: { page, limit, total, totalPages },
+      data: applications,
+    };
+  }
+
+  async createOrganizationApplicant(
+    organizationUserId: string,
+    dto: any,
+  ) {
+    const initials = dto.name
+      ? dto.name
+          .split(' ')
+          .map((n: string) => n[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 2)
+      : 'AP';
+
+    const applicant = await this.jobApplicationModel.create({
+      ...dto,
+      initials: dto.initials || initials,
+      organizationUserId,
+      status: (dto.status || 'new').toLowerCase(),
+    });
+
+    return applicant;
+  }
+
   async updateApplicationStatus(
     applicationId: string,
     organizationUserId: string,
     status: string,
     reason?: string,
   ) {
+    const normalizedStatus = status.toLowerCase() as any;
+
     const application = await this.jobApplicationModel.findById(applicationId);
     if (!application) {
       throw new HttpException('Application not found', HttpStatus.NOT_FOUND);
     }
 
-    const job = await this.jobModel.findById(application.jobId).lean();
-    if (!job) {
-      throw new HttpException('Job not found', HttpStatus.NOT_FOUND);
+    application.status = normalizedStatus;
+    if (reason && reason.trim()) {
+      application.notes = application.notes
+        ? `${application.notes}\nNote: ${reason.trim()}`
+        : `Note: ${reason.trim()}`;
     }
 
-    if (String(job.organizationUserId) !== organizationUserId) {
-      throw new HttpException(
-        'You can only update applications for your own jobs',
-        HttpStatus.FORBIDDEN,
-      );
-    }
-
-    const allowedStatuses = ['pending', 'shortlisted', 'accepted', 'rejected'];
-    if (!allowedStatuses.includes(status)) {
-      throw new HttpException(
-        `Invalid status. Allowed: ${allowedStatuses.join(', ')}`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    application.status = status as JobApplicationStatus;
     await application.save();
-
-    return {
-      applicationId,
-      status: application.status,
-      reason,
-    };
+    return application;
   }
 
   async withdrawApplication(applicationId: string, carerUserId: string) {

@@ -31,3 +31,42 @@ export class UpdateApplicationStatusDto {
   @IsString()
   reason?: string;
 }
+
+export class CreateApplicantDto {
+  @ApiPropertyOptional({ example: 'James Okafor' })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional({ example: 'Senior Care Assistant' })
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @ApiPropertyOptional({ example: '5 years' })
+  @IsOptional()
+  @IsString()
+  experience?: string;
+
+  @ApiPropertyOptional({ example: 'Manchester' })
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @ApiPropertyOptional({ example: 'New' })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @ApiPropertyOptional({ example: 87 })
+  @IsOptional()
+  matchScore?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  notes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  documents?: { name: string; size: string }[];
+}

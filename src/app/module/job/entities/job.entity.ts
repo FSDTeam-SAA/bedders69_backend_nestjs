@@ -65,6 +65,36 @@ export class Job {
   @Prop({ type: [String], default: [] })
   requirements!: string[];
 
+  @Prop({ trim: true })
+  department?: string;
+
+  @Prop({ type: [String], default: [] })
+  benefits?: string[];
+
+  @Prop({ trim: true })
+  hoursPerWeek?: string;
+
+  @Prop({ trim: true, default: 'Permanent' })
+  contractType?: string;
+
+  @Prop({ type: [String], default: [] })
+  workLocations?: string[];
+
+  @Prop({ type: [String], default: [] })
+  workingPatterns?: string[];
+
+  @Prop({ trim: true })
+  minExperience?: string;
+
+  @Prop({ trim: true })
+  pinRequired?: string;
+
+  @Prop({ default: false })
+  isFeaturedBoost?: boolean;
+
+  @Prop({ default: false })
+  isUrgentHire?: boolean;
+
   @Prop({ type: String, enum: JOB_STATUSES, default: 'draft' })
   status!: JobStatus;
 

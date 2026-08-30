@@ -174,6 +174,41 @@ export class CreateCompanyDto {
   @IsOptional()
   serviceOffered?: string[];
 
+  @ApiPropertyOptional({ example: 'Sunrise Care' })
+  @IsString()
+  @IsOptional()
+  tradingName?: string;
+
+  @ApiPropertyOptional({ example: 'Sunrise Care Group provides compassionate care...' })
+  @IsString()
+  @IsOptional()
+  about?: string;
+
+  @ApiPropertyOptional({ example: 'Mon–Fri 7am–6pm · Sat 8am–2pm · Emergency 24/7' })
+  @IsString()
+  @IsOptional()
+  serviceHours?: string;
+
+  @ApiPropertyOptional({ example: '2008' })
+  @IsString()
+  @IsOptional()
+  founded?: string;
+
+  @ApiPropertyOptional({ example: '320+' })
+  @IsString()
+  @IsOptional()
+  staffCount?: string;
+
+  @ApiPropertyOptional({ example: '8' })
+  @IsString()
+  @IsOptional()
+  locationsCount?: string;
+
+  @ApiPropertyOptional({ example: 'Outstanding (CQC)' })
+  @IsString()
+  @IsOptional()
+  cqcRating?: string;
+
   @ApiPropertyOptional({
     example: 'pending',
     enum: ['approved', 'pending', 'rejected'],

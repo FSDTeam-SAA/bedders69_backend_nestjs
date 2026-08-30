@@ -55,6 +55,27 @@ export class Company {
   @Prop()
   serviceOffered?: string[];
 
+  @Prop()
+  tradingName?: string;
+
+  @Prop()
+  about?: string;
+
+  @Prop()
+  serviceHours?: string;
+
+  @Prop()
+  founded?: string;
+
+  @Prop()
+  staffCount?: string;
+
+  @Prop()
+  locationsCount?: string;
+
+  @Prop()
+  cqcRating?: string;
+
   @Prop({ enum: ['approved', 'pending', 'rejected'], default: 'pending' })
   status?: string;
 

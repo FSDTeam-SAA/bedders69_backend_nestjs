@@ -147,6 +147,54 @@ export class JobApplicationController {
     return { message: 'Application fetched successfully', data: result };
   }
 
+  @Get('get-organization-applicants')
+  @ApiBearerAuth('access-token')
+  @UseGuards(
+    AuthGuard('care_company', 'agency', 'supplier', 'service_provider'),
+  )
+  @ApiOperation({ summary: 'Get all applicants for current organization' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
+  @ApiOkResponse({ description: 'Applicants fetched successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @HttpCode(HttpStatus.OK)
+  async getOrganizationApplicants(@Req() req: Request) {
+    const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+    const result =
+      await this.jobApplicationService.getOrganizationApplicants(
+        req.user!.id,
+        options,
+      );
+    return {
+      message: 'Applicants fetched successfully',
+      meta: result.meta,
+      data: result.data,
+    };
+  }
+
+  @Post('create-applicant')
+  @ApiBearerAuth('access-token')
+  @UseGuards(
+    AuthGuard('care_company', 'agency', 'supplier', 'service_provider'),
+  )
+  @ApiOperation({ summary: 'Create applicant profile' })
+  @ApiOkResponse({ description: 'Applicant created successfully' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @HttpCode(HttpStatus.CREATED)
+  async createApplicant(@Req() req: Request, @Body() dto: any) {
+    const result =
+      await this.jobApplicationService.createOrganizationApplicant(
+        req.user!.id,
+        dto,
+      );
+    return {
+      message: 'Applicant created successfully',
+      data: result,
+    };
+  }
+
   @Patch('update-application-status/:id')
   @ApiBearerAuth('access-token')
   @UseGuards(

@@ -71,7 +71,7 @@ async function bootstrap() {
 
   app.use(SCALAR_DOCS_PATH, apiReference(scalarReferenceConfig));
 
-  await app.listen(config.port, () => {
+  await app.listen(config.port, '0.0.0.0', () => {
     console.log(`Server is running on http://localhost:${config.port}`);
     console.log(
       `Scalar docs: http://localhost:${config.port}${SCALAR_DOCS_PATH}`,

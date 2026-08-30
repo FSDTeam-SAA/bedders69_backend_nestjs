@@ -75,7 +75,10 @@ export class AuthService {
     if (user) {
       throw new HttpException('User already exists', 400);
     }
-    const newUser = await this.userModel.create(CreateAuthDto);
+    const newUser = await this.userModel.create({
+      ...CreateAuthDto,
+      status: 'active',
+    });
     return this.sanitizeUser(newUser);
   }
 
@@ -191,21 +194,50 @@ export class AuthService {
     return { message: 'Check your email for OTP' };
   }
 
+  async sendVerificationOtp(email: string) {
+    const user = await this.userModel.findOne({ email });
+    const generateOtpNumber = Math.floor(100000 + Math.random() * 900000);
+
+    if (user) {
+      user.otp = generateOtpNumber.toString();
+      user.otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+      await user.save();
+    }
+
+    const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+      <h2 style="color: #0e7490; text-align: center; margin-bottom: 8px;">Bedders Care Platform</h2>
+      <p style="color: #475569; text-align: center; font-size: 16px;">Use the following One-Time Password (OTP) to verify your email address:</p>
+      <div style="text-align: center; margin: 24px 0;">
+        <span style="display: inline-block; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #0f172a; padding: 12px 24px; background: #f0fdfa; border: 2px dashed #0e7490; border-radius: 8px;">
+          ${generateOtpNumber}
+        </span>
+      </div>
+      <p style="color: #64748b; font-size: 14px; text-align: center;">This OTP is valid for 15 minutes. If you did not request this, please ignore this email.</p>
+    </div>
+  `;
+
+    try {
+      await sendMailer(email, 'Bedders - Email Verification OTP', html);
+    } catch (err) {
+      console.error('Failed to send mail:', err);
+    }
+
+    return { message: 'OTP sent to your email successfully' };
+  }
+
   async verifyEmail(email: string, otp: string) {
     const user = await this.userModel.findOne({ email });
-    if (!user) throw new HttpException('Invalid link', 400);
+    if (!user) throw new HttpException('User not found', 404);
 
-    if (user.otp !== otp) throw new HttpException('Invalid OTP', 400);
-    if (!user.otpExpiry) throw new HttpException('Invalid OTP', 400);
-    const todayDate = new Date();
-    if (user.otpExpiry < todayDate) throw new HttpException('OTP expired', 400);
+    if (user.otp && user.otp !== otp) throw new HttpException('Invalid OTP', 400);
+    if (user.otpExpiry && user.otpExpiry < new Date()) throw new HttpException('OTP expired', 400);
 
     user.otp = undefined as any;
     user.otpExpiry = undefined as any;
-
+    user.status = 'active';
     user.verifiedForget = true;
     await user.save();
-    if (!user.verifiedForget) throw new HttpException('Invalid link', 400);
 
     return { message: 'OTP verified successfully' };
   }

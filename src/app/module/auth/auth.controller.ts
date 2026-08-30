@@ -141,6 +141,20 @@ export class AuthController {
     };
   }
 
+  @Post('send-otp')
+  @ApiOperation({
+    summary: 'Send verification OTP',
+    description: 'Generates and sends an OTP code to the provided email address.',
+  })
+  @HttpCode(HttpStatus.OK)
+  async sendOtp(@Body('email') email: string) {
+    const result = await this.authService.sendVerificationOtp(email);
+    return {
+      message: 'OTP sent successfully',
+      data: result,
+    };
+  }
+
   @Post('verify')
   @ApiOperation({
     summary: 'Verify password reset OTP',

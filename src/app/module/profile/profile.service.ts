@@ -167,7 +167,7 @@ export class ProfileService {
       phoneNumber: createProfileDto.phoneNumber,
       address: createProfileDto.address,
       city: createProfileDto.city,
-      status: 'pending',
+      status: 'active',
     });
 
     const { password: _password, ...profileData } = createProfileDto;

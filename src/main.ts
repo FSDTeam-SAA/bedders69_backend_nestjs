@@ -31,7 +31,17 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.enableCors({
-    origin: config.corsOrigin === '*' ? true : config.corsOrigin,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (
+        config.corsOrigin === '*' ||
+        origin === config.corsOrigin ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   });
 

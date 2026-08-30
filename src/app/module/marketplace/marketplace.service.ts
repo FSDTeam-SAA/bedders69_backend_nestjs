@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import { IFilterParams } from 'src/app/helpers/pick';
 import {
@@ -299,15 +299,36 @@ export class MarketplaceService {
   }
 
   async getMarketplaceListing(listingId: string) {
-    const listing = await this.listingModel
-      .findOne({
-        _id: listingId,
-        status: 'approved',
-        isPublished: true,
-        isAvailable: true,
-      })
+    const isObjectId = mongoose.Types.ObjectId.isValid(listingId);
+    const query: Record<string, unknown> = {
+      status: 'approved',
+      isPublished: true,
+      isAvailable: true,
+    };
+
+    if (isObjectId) {
+      query._id = listingId;
+    } else {
+      const decoded = decodeURIComponent(listingId).replace(/-/g, ' ');
+      query.title = { $regex: `^${decoded}$`, $options: 'i' };
+    }
+
+    let listing = await this.listingModel
+      .findOne(query)
       .populate('sellerUserId', 'fullName email')
       .lean();
+
+    if (!listing && !isObjectId) {
+      const decoded = decodeURIComponent(listingId).replace(/-/g, ' ');
+      listing = await this.listingModel
+        .findOne({
+          title: { $regex: decoded, $options: 'i' },
+          status: 'approved',
+          isPublished: true,
+        })
+        .populate('sellerUserId', 'fullName email')
+        .lean();
+    }
 
     if (!listing) {
       throw new HttpException(
@@ -316,7 +337,7 @@ export class MarketplaceService {
       );
     }
 
-    await this.listingModel.findByIdAndUpdate(listingId, {
+    await this.listingModel.findByIdAndUpdate(listing._id, {
       $inc: { viewCount: 1 },
     });
 

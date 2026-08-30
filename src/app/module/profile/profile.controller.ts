@@ -128,6 +128,44 @@ export class ProfileController {
     };
   }
 
+  @Get('search-carers')
+  @ApiOperation({ summary: 'Search public carer directory' })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'city', required: false, type: String })
+  @ApiQuery({ name: 'postCode', required: false, type: String })
+  @ApiQuery({ name: 'skills', required: false, type: String })
+  @ApiQuery({ name: 'specialisms', required: false, type: String })
+  @ApiQuery({ name: 'yearsOfExperience', required: false, type: Number })
+  @ApiQuery({ name: 'isAvailable', required: false, type: Boolean })
+  @ApiQuery({ name: 'hasDrivingLicense', required: false, type: Boolean })
+  @ApiQuery({ name: 'hasVehicle', required: false, type: Boolean })
+  @ApiQuery({ name: 'shifts', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiOkResponse({ description: 'Carers fetched successfully' })
+  @HttpCode(HttpStatus.OK)
+  async searchCarers(@Req() req: Request) {
+    const filters = pick(req.query, [
+      'search',
+      'city',
+      'postCode',
+      'skills',
+      'specialisms',
+      'yearsOfExperience',
+      'isAvailable',
+      'hasDrivingLicense',
+      'hasVehicle',
+      'shifts',
+    ]);
+    const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+    const result = await this.profileService.searchCarers(filters, options);
+    return {
+      message: 'Carers fetched successfully',
+      meta: result.meta,
+      data: result.data,
+    };
+  }
+
   @Get('search-restricted-carers')
   @ApiBearerAuth('access-token')
   @UseGuards(

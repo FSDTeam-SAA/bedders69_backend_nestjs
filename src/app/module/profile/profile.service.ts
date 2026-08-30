@@ -578,6 +578,92 @@ export class ProfileService {
     }
   }
 
+  async searchCarers(params: IFilterParams, options: IOptions) {
+    const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
+    const {
+      search,
+      city,
+      postCode,
+      skills,
+      specialisms,
+      yearsOfExperience,
+      isAvailable,
+      hasDrivingLicense,
+      hasVehicle,
+      shifts,
+    } = params;
+    const whereConditions: Record<string, unknown> = {
+      isActive: true,
+    };
+
+    if (search) {
+      whereConditions.$or = [
+        'careName',
+        'address',
+        'postCode',
+        'professionalSummary',
+      ].map((field) => ({
+        [field]: { $regex: search, $options: 'i' },
+      }));
+    }
+    if (city) whereConditions.address = { $regex: city, $options: 'i' };
+    if (postCode)
+      whereConditions.postCode = { $regex: postCode, $options: 'i' };
+    if (skills) whereConditions.skills = { $in: String(skills).split(',') };
+    if (specialisms) {
+      whereConditions.specialisms = { $in: String(specialisms).split(',') };
+    }
+    if (yearsOfExperience) {
+      whereConditions.yearsOfExperience = { $gte: Number(yearsOfExperience) };
+    }
+    if (typeof isAvailable !== 'undefined') {
+      whereConditions.isAvailable = String(isAvailable) === 'true';
+    }
+    if (typeof hasDrivingLicense !== 'undefined') {
+      whereConditions.hasDrivingLicense = String(hasDrivingLicense) === 'true';
+    }
+    if (typeof hasVehicle !== 'undefined') {
+      whereConditions.hasVehicle = String(hasVehicle) === 'true';
+    }
+    if (shifts) whereConditions.shifts = shifts;
+
+    const [total, carers] = await Promise.all([
+      this.careModel.countDocuments(whereConditions),
+      this.careModel
+        .find(whereConditions)
+        .select(
+          'careName profilePicture phoneNumber email hasDrivingLicense hasVehicle address postCode shifts specialisms yearsOfExperience skills isAvailable professionalSummary profileCompletionStatus createdAt',
+        )
+        .skip(skip)
+        .limit(limit)
+        .sort({ [sortBy]: sortOrder })
+        .lean(),
+    ]);
+
+    return {
+      meta: { page, limit, total },
+      data: carers.map((carer: any) => ({
+        id: carer._id,
+        careName: carer.careName,
+        profilePicture: carer.profilePicture,
+        phoneNumber: carer.phoneNumber,
+        email: carer.email,
+        hasDrivingLicense: carer.hasDrivingLicense,
+        hasVehicle: carer.hasVehicle,
+        address: carer.address,
+        postCode: carer.postCode,
+        shifts: carer.shifts,
+        specialisms: carer.specialisms || [],
+        yearsOfExperience: carer.yearsOfExperience,
+        skills: carer.skills || [],
+        isAvailable: carer.isAvailable,
+        professionalSummary: carer.professionalSummary,
+        profileCompletionStatus: carer.profileCompletionStatus,
+        createdAt: carer.createdAt,
+      })),
+    };
+  }
+
   async searchRestrictedCarers(
     requesterUserId: string,
     params: IFilterParams,

@@ -189,9 +189,9 @@ export class JobService {
       throw new HttpException('Job not found', HttpStatus.NOT_FOUND);
     }
 
-    if (job.status !== 'pending_approval') {
+    if (job.status === 'closed') {
       throw new HttpException(
-        'Only jobs pending approval can be approved',
+        'Closed jobs cannot be approved',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -200,6 +200,7 @@ export class JobService {
     job.status = 'approved';
     job.isPublished = true;
     job.publishedAt = new Date();
+    (job as any).rejectionReason = undefined;
     await job.save();
 
     await this.jobAuditLogModel.create({
@@ -216,6 +217,7 @@ export class JobService {
       previousStatus,
       status: job.status,
       action: 'approve-job',
+      job,
     };
   }
 
@@ -225,9 +227,9 @@ export class JobService {
       throw new HttpException('Job not found', HttpStatus.NOT_FOUND);
     }
 
-    if (job.status !== 'pending_approval') {
+    if (job.status === 'closed') {
       throw new HttpException(
-        'Only jobs pending approval can be rejected',
+        'Closed jobs cannot be rejected',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -235,6 +237,7 @@ export class JobService {
     const previousStatus = job.status;
     job.status = 'rejected';
     job.isPublished = false;
+    (job as any).rejectionReason = reason || '';
     await job.save();
 
     await this.jobAuditLogModel.create({
@@ -243,7 +246,7 @@ export class JobService {
       action: 'reject-job',
       previousStatus,
       nextStatus: 'rejected',
-      reason,
+      reason: reason || '',
     });
 
     return {
@@ -251,6 +254,9 @@ export class JobService {
       previousStatus,
       status: job.status,
       action: 'reject-job',
+      rejectionReason: (job as any).rejectionReason,
+      reason: (job as any).rejectionReason,
+      job,
     };
   }
 
@@ -272,35 +278,30 @@ export class JobService {
     };
 
     if (search) {
-      whereConditions.$or = ['title', 'description', 'location', 'city'].map(
-        (field) => ({
-          [field]: { $regex: search, $options: 'i' },
-        }),
-      );
+      whereConditions.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { city: { $regex: search, $options: 'i' } },
+      ];
     }
     if (city) whereConditions.city = { $regex: city, $options: 'i' };
     if (postCode)
       whereConditions.postCode = { $regex: postCode, $options: 'i' };
     if (jobType) whereConditions.jobType = jobType;
-    if (requiredSkills) {
-      whereConditions.requiredSkills = {
-        $in: String(requiredSkills).split(','),
-      };
+    if (requiredSkills && requiredSkills.length > 0) {
+      whereConditions.requiredSkills = { $in: requiredSkills };
     }
     if (minExperience) {
-      whereConditions.requiredExperience = { $gte: Number(minExperience) };
+      whereConditions.minExperience = minExperience;
     }
-    if (salaryMin) {
-      whereConditions.salaryMax = { $gte: Number(salaryMin) };
+    if (salaryMin !== undefined) {
+      whereConditions.salaryMin = { $gte: Number(salaryMin) };
     }
 
     const [total, jobs] = await Promise.all([
       this.jobModel.countDocuments(whereConditions),
       this.jobModel
         .find(whereConditions)
-        .select(
-          'title description location city postCode jobType salaryMin salaryMax salaryCurrency requiredSkills requiredExperience requirements publishedAt closesAt createdAt',
-        )
         .populate('organizationUserId', 'fullName email')
         .skip(skip)
         .limit(limit)
@@ -310,31 +311,7 @@ export class JobService {
 
     return {
       meta: { page, limit, total },
-      data: jobs.map((job: any) => ({
-        id: job._id,
-        title: job.title,
-        description: job.description,
-        location: job.location,
-        city: job.city,
-        postCode: job.postCode,
-        jobType: job.jobType,
-        salaryMin: job.salaryMin,
-        salaryMax: job.salaryMax,
-        salaryCurrency: job.salaryCurrency,
-        requiredSkills: job.requiredSkills || [],
-        requiredExperience: job.requiredExperience,
-        requirements: job.requirements || [],
-        publishedAt: job.publishedAt,
-        closesAt: job.closesAt,
-        createdAt: job.createdAt,
-        organization: job.organizationUserId
-          ? {
-              id: job.organizationUserId._id,
-              name: job.organizationUserId.fullName,
-              email: job.organizationUserId.email,
-            }
-          : null,
-      })),
+      data: jobs,
     };
   }
 
@@ -364,6 +341,8 @@ export class JobService {
       requiredExperience: j.requiredExperience,
       requirements: j.requirements || [],
       status: j.status,
+      rejectionReason: j.rejectionReason || null,
+      reason: j.rejectionReason || null,
       publishedAt: j.publishedAt,
       closesAt: j.closesAt,
       createdAt: j.createdAt,

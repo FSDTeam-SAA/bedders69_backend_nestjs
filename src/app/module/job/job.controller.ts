@@ -218,6 +218,7 @@ export class JobController {
   }
 
   @Post('admin/approve-job')
+  @Patch('admin/approve-job')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
   @ApiOperation({ summary: 'Approve a job posting (admin)' })
@@ -236,6 +237,7 @@ export class JobController {
   }
 
   @Post('admin/reject-job')
+  @Patch('admin/reject-job')
   @ApiBearerAuth('access-token')
   @UseGuards(AuthGuard('admin'))
   @ApiOperation({ summary: 'Reject a job posting (admin)' })

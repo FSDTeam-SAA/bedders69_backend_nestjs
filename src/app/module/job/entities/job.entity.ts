@@ -98,6 +98,9 @@ export class Job {
   @Prop({ type: String, enum: JOB_STATUSES, default: 'draft' })
   status!: JobStatus;
 
+  @Prop({ trim: true })
+  rejectionReason?: string;
+
   @Prop({ default: false })
   isPublished!: boolean;
 

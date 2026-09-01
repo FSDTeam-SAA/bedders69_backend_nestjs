@@ -43,6 +43,11 @@ export class CareController {
       [
         { name: 'profilePicture', maxCount: 1 },
         { name: 'cv', maxCount: 1 },
+        { name: 'dbsCertificate', maxCount: 1 },
+        { name: 'careCertificate', maxCount: 1 },
+        { name: 'trainingCertificates', maxCount: 5 },
+        { name: 'firstAidCertificate', maxCount: 1 },
+        { name: 'qualificationCertificates', maxCount: 5 },
         { name: 'documents', maxCount: 10 },
       ],
       fileUpload.uploadConfig,
@@ -55,6 +60,11 @@ export class CareController {
     files?: {
       profilePicture?: Express.Multer.File[];
       cv?: Express.Multer.File[];
+      dbsCertificate?: Express.Multer.File[];
+      careCertificate?: Express.Multer.File[];
+      trainingCertificates?: Express.Multer.File[];
+      firstAidCertificate?: Express.Multer.File[];
+      qualificationCertificates?: Express.Multer.File[];
       documents?: Express.Multer.File[];
     },
   ) {
@@ -133,6 +143,11 @@ export class CareController {
       [
         { name: 'profilePicture', maxCount: 1 },
         { name: 'cv', maxCount: 1 },
+        { name: 'dbsCertificate', maxCount: 1 },
+        { name: 'careCertificate', maxCount: 1 },
+        { name: 'trainingCertificates', maxCount: 5 },
+        { name: 'firstAidCertificate', maxCount: 1 },
+        { name: 'qualificationCertificates', maxCount: 5 },
         { name: 'documents', maxCount: 10 },
       ],
       fileUpload.uploadConfig,
@@ -146,6 +161,11 @@ export class CareController {
     files?: {
       profilePicture?: Express.Multer.File[];
       cv?: Express.Multer.File[];
+      dbsCertificate?: Express.Multer.File[];
+      careCertificate?: Express.Multer.File[];
+      trainingCertificates?: Express.Multer.File[];
+      firstAidCertificate?: Express.Multer.File[];
+      qualificationCertificates?: Express.Multer.File[];
       documents?: Express.Multer.File[];
     },
   ) {

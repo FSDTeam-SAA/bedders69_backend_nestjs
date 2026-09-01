@@ -137,6 +137,21 @@ export class Care {
   cv!: string;
 
   @Prop()
+  dbsCertificate!: string;
+
+  @Prop()
+  careCertificate!: string;
+
+  @Prop({ default: [] })
+  trainingCertificates!: string[];
+
+  @Prop()
+  firstAidCertificate!: string;
+
+  @Prop({ default: [] })
+  qualificationCertificates!: string[];
+
+  @Prop()
   documents!: string[];
 
   @Prop({ default: false })

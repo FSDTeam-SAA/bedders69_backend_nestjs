@@ -395,6 +395,50 @@ export class CreateCareDto {
   cv?: string;
 
   @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+  })
+  @IsOptional()
+  @IsString()
+  dbsCertificate?: string;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+  })
+  @IsOptional()
+  @IsString()
+  careCertificate?: string;
+
+  @ApiPropertyOptional({
+    type: 'array',
+    items: { type: 'string', format: 'binary' },
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseStringArray(value))
+  @IsArray()
+  @IsString({ each: true })
+  trainingCertificates?: string[];
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+  })
+  @IsOptional()
+  @IsString()
+  firstAidCertificate?: string;
+
+  @ApiPropertyOptional({
+    type: 'array',
+    items: { type: 'string', format: 'binary' },
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseStringArray(value))
+  @IsArray()
+  @IsString({ each: true })
+  qualificationCertificates?: string[];
+
+  @ApiPropertyOptional({
     type: 'array',
     items: {
       type: 'string',

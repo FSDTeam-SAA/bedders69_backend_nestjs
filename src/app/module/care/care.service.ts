@@ -11,6 +11,11 @@ type CareUploadFiles = {
   profilePicture?: Express.Multer.File[];
   cv?: Express.Multer.File[];
   documents?: Express.Multer.File[];
+  dbsCertificate?: Express.Multer.File[];
+  careCertificate?: Express.Multer.File[];
+  trainingCertificates?: Express.Multer.File[];
+  firstAidCertificate?: Express.Multer.File[];
+  qualificationCertificates?: Express.Multer.File[];
 };
 
 @Injectable()
@@ -96,6 +101,31 @@ export class CareService {
       createCareDto.cv = cv;
     }
 
+    const dbsCertificate = await this.uploadSingleFile(files?.dbsCertificate?.[0]);
+    if (dbsCertificate) {
+      createCareDto.dbsCertificate = dbsCertificate;
+    }
+
+    const careCertificate = await this.uploadSingleFile(files?.careCertificate?.[0]);
+    if (careCertificate) {
+      createCareDto.careCertificate = careCertificate;
+    }
+
+    const trainingCertificates = await this.uploadMultipleFiles(files?.trainingCertificates);
+    if (trainingCertificates) {
+      createCareDto.trainingCertificates = trainingCertificates;
+    }
+
+    const firstAidCertificate = await this.uploadSingleFile(files?.firstAidCertificate?.[0]);
+    if (firstAidCertificate) {
+      createCareDto.firstAidCertificate = firstAidCertificate;
+    }
+
+    const qualificationCertificates = await this.uploadMultipleFiles(files?.qualificationCertificates);
+    if (qualificationCertificates) {
+      createCareDto.qualificationCertificates = qualificationCertificates;
+    }
+
     const documents = await this.uploadMultipleFiles(files?.documents);
     if (documents) {
       createCareDto.documents = documents;
@@ -139,6 +169,31 @@ export class CareService {
     const cv = await this.uploadSingleFile(files?.cv?.[0]);
     if (cv) {
       updateCareDto.cv = cv;
+    }
+
+    const dbsCertificate = await this.uploadSingleFile(files?.dbsCertificate?.[0]);
+    if (dbsCertificate) {
+      updateCareDto.dbsCertificate = dbsCertificate;
+    }
+
+    const careCertificate = await this.uploadSingleFile(files?.careCertificate?.[0]);
+    if (careCertificate) {
+      updateCareDto.careCertificate = careCertificate;
+    }
+
+    const trainingCertificates = await this.uploadMultipleFiles(files?.trainingCertificates);
+    if (trainingCertificates) {
+      updateCareDto.trainingCertificates = trainingCertificates;
+    }
+
+    const firstAidCertificate = await this.uploadSingleFile(files?.firstAidCertificate?.[0]);
+    if (firstAidCertificate) {
+      updateCareDto.firstAidCertificate = firstAidCertificate;
+    }
+
+    const qualificationCertificates = await this.uploadMultipleFiles(files?.qualificationCertificates);
+    if (qualificationCertificates) {
+      updateCareDto.qualificationCertificates = qualificationCertificates;
     }
 
     const documents = await this.uploadMultipleFiles(files?.documents);

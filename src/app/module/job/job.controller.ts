@@ -35,6 +35,7 @@ export class JobController {
   constructor(private readonly jobService: JobService) {}
 
   @Post('create-job')
+  @Post('/care-company/jobs')
   @ApiBearerAuth('access-token')
   @UseGuards(
     AuthGuard('care_company', 'agency', 'supplier', 'service_provider'),
@@ -70,6 +71,7 @@ export class JobController {
   }
 
   @Patch('publish-job/:id')
+  @Patch('/care-company/jobs/:id/publish')
   @ApiBearerAuth('access-token')
   @UseGuards(
     AuthGuard('care_company', 'agency', 'supplier', 'service_provider'),
@@ -102,6 +104,7 @@ export class JobController {
   }
 
   @Get('get-my-jobs')
+  @Get('/care-company/jobs')
   @ApiBearerAuth('access-token')
   @UseGuards(
     AuthGuard('care_company', 'agency', 'supplier', 'service_provider'),

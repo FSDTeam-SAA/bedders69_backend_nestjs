@@ -326,6 +326,17 @@ export class JobService {
     }
 
     const j = job as any;
+    let rejectionReason = j.rejectionReason || j.reason || null;
+    if (!rejectionReason && j.status === 'rejected') {
+      const auditLog = await this.jobAuditLogModel
+        .findOne({ jobId: j._id, action: 'reject-job' })
+        .sort({ createdAt: -1 })
+        .lean();
+      if (auditLog?.reason) {
+        rejectionReason = auditLog.reason;
+      }
+    }
+
     return {
       id: j._id,
       title: j.title,
@@ -341,8 +352,9 @@ export class JobService {
       requiredExperience: j.requiredExperience,
       requirements: j.requirements || [],
       status: j.status,
-      rejectionReason: j.rejectionReason || null,
-      reason: j.rejectionReason || null,
+      rejectionReason: rejectionReason || null,
+      reason: rejectionReason || null,
+      rejection_reason: rejectionReason || null,
       publishedAt: j.publishedAt,
       closesAt: j.closesAt,
       createdAt: j.createdAt,
@@ -371,9 +383,31 @@ export class JobService {
         .lean(),
     ]);
 
+    const formattedJobs = await Promise.all(
+      jobs.map(async (job: any) => {
+        let rejectionReason = job.rejectionReason || job.reason || null;
+        if (!rejectionReason && job.status === 'rejected') {
+          const auditLog = await this.jobAuditLogModel
+            .findOne({ jobId: job._id, action: 'reject-job' })
+            .sort({ createdAt: -1 })
+            .lean();
+          if (auditLog?.reason) {
+            rejectionReason = auditLog.reason;
+          }
+        }
+
+        return {
+          ...job,
+          rejectionReason: rejectionReason || null,
+          reason: rejectionReason || null,
+          rejection_reason: rejectionReason || null,
+        };
+      }),
+    );
+
     return {
       meta: { page, limit, total },
-      data: jobs,
+      data: formattedJobs,
     };
   }
 
@@ -401,9 +435,31 @@ export class JobService {
         .lean(),
     ]);
 
+    const formattedJobs = await Promise.all(
+      jobs.map(async (job: any) => {
+        let rejectionReason = job.rejectionReason || job.reason || null;
+        if (!rejectionReason && job.status === 'rejected') {
+          const auditLog = await this.jobAuditLogModel
+            .findOne({ jobId: job._id, action: 'reject-job' })
+            .sort({ createdAt: -1 })
+            .lean();
+          if (auditLog?.reason) {
+            rejectionReason = auditLog.reason;
+          }
+        }
+
+        return {
+          ...job,
+          rejectionReason: rejectionReason || null,
+          reason: rejectionReason || null,
+          rejection_reason: rejectionReason || null,
+        };
+      }),
+    );
+
     return {
       meta: { page, limit, total },
-      data: jobs,
+      data: formattedJobs,
     };
   }
 }

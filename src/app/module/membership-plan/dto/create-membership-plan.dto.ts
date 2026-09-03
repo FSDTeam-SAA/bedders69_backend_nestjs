@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDateString, IsEnum, IsNumber, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateMembershipPlanDto {
   @ApiProperty({ example: 'Premium Plan' })
@@ -23,4 +30,9 @@ export class CreateMembershipPlanDto {
   @ApiProperty({ enum: ['monthly', 'yearly'], example: 'monthly' })
   @IsEnum(['monthly', 'yearly'])
   duration!: string;
+
+  @ApiProperty({ example: false, required: false })
+  @IsBoolean()
+  @IsOptional()
+  isPopular?: boolean;
 }

@@ -25,6 +25,13 @@ export class MembershipPlanService {
       throw new HttpException('Membership plan already exists', 400);
     }
 
+    if (createMembershipPlanDto.isPopular) {
+      await this.membershipPlanModel.updateMany(
+        { duration: createMembershipPlanDto.duration },
+        { isPopular: false },
+      );
+    }
+
     return this.membershipPlanModel.create(createMembershipPlanDto);
   }
 
@@ -33,15 +40,26 @@ export class MembershipPlanService {
   }
 
   async update(id: string, updateMembershipPlanDto: UpdateMembershipPlanDto) {
+    const existing = await this.membershipPlanModel.findById(id);
+    if (!existing) {
+      throw new HttpException('Membership plan not found', 404);
+    }
+
+    const targetDuration =
+      updateMembershipPlanDto.duration || existing.duration;
+
+    if (updateMembershipPlanDto.isPopular) {
+      await this.membershipPlanModel.updateMany(
+        { duration: targetDuration, _id: { $ne: id } },
+        { isPopular: false },
+      );
+    }
+
     const result = await this.membershipPlanModel.findByIdAndUpdate(
       id,
       updateMembershipPlanDto,
       { new: true },
     );
-
-    if (!result) {
-      throw new HttpException('Membership plan not found', 404);
-    }
 
     return result;
   }

@@ -19,6 +19,9 @@ export class MembershipPlan {
 
   @Prop({ required: true, enum: ['monthly', 'yearly'] })
   duration!: string;
+
+  @Prop({ default: false })
+  isPopular!: boolean;
 }
 
 export const MembershipPlanSchema =

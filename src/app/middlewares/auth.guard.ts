@@ -36,22 +36,33 @@ export default function AuthGuard(...roles: string[]): Type<CanActivate> {
     ): boolean | Promise<boolean> | Observable<boolean> {
       const request = context.switchToHttp().getRequest<Request>();
       const token = request.headers.authorization?.split(' ')[1];
-      if (!token) throw new HttpException('Unauthorized', 401);
+      const isOptional = roles.includes('optional') || roles.includes('public');
 
-      const decoded = this.jwtService.verify<JwtPayload>(token, {
-        secret: config.jwt.accessTokenSecret,
-      });
-      if (!decoded) throw new HttpException('Unauthorized', 401);
-
-      if (decoded.status && decoded.status !== 'active') {
-        throw new HttpException('Account is not active', 403);
+      if (!token) {
+        if (isOptional) return true;
+        throw new HttpException('Unauthorized', 401);
       }
 
-      if (roles.length && !roles.includes(decoded.role)) {
-        throw new HttpException('Forbidden', 403);
+      try {
+        const decoded = this.jwtService.verify<JwtPayload>(token, {
+          secret: config.jwt.accessTokenSecret,
+        });
+
+        if (decoded?.status && decoded.status !== 'active') {
+          throw new HttpException('Account is not active', 403);
+        }
+
+        if (roles.length && !isOptional && !roles.includes(decoded.role)) {
+          throw new HttpException('Forbidden', 403);
+        }
+
+        request.user = decoded;
+        return true;
+      } catch (err: any) {
+        if (isOptional) return true;
+        if (err instanceof HttpException) throw err;
+        throw new HttpException('Unauthorized', 401);
       }
-      request.user = decoded;
-      return true;
     }
   }
   return mixin(AuthGuardImpl);

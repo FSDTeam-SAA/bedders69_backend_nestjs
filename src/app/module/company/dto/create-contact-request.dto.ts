@@ -4,22 +4,22 @@ import { CONTACT_REQUEST_STATUSES } from '../entities/contact-request.entity';
 import type { ContactRequestStatus } from '../entities/contact-request.entity';
 
 export class CreateContactRequestDto {
-  @ApiProperty({ example: 'Margaret Turner' })
+  @ApiPropertyOptional({ example: 'Margaret Turner' })
   @IsString()
-  @IsNotEmpty()
-  name!: string;
+  @IsOptional()
+  name?: string;
 
   @ApiPropertyOptional({ example: 'Family' })
   @IsString()
   @IsOptional()
   category?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: "I'm looking for residential care for my 82-year-old mother.",
   })
   @IsString()
-  @IsNotEmpty()
-  message!: string;
+  @IsOptional()
+  message?: string;
 
   @ApiPropertyOptional({ example: '07700 900 123' })
   @IsString()
@@ -45,6 +45,11 @@ export class CreateContactRequestDto {
   @IsEnum(CONTACT_REQUEST_STATUSES)
   @IsOptional()
   status?: ContactRequestStatus;
+
+  @ApiPropertyOptional({ example: '65f1c9f234df3c9342a58f01' })
+  @IsString()
+  @IsOptional()
+  targetUserId?: string;
 }
 
 export class UpdateContactRequestStatusDto {

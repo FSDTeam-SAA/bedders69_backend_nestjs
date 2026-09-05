@@ -70,8 +70,12 @@ export class JobApplicationService {
     const application = await this.jobApplicationModel.create({
       jobId,
       carerUserId,
+      organizationUserId: job.organizationUserId,
+      name: user.fullName || user.email,
+      role: (user as any).roleTitle || job.title || 'Care Assistant',
+      location: (user as any).city || (user as any).location || job.city || 'United Kingdom',
       coverLetter,
-      status: 'pending',
+      status: 'new',
       appliedAt: new Date(),
     });
 
@@ -198,133 +202,80 @@ export class JobApplicationService {
     organizationUserId: string,
     options: IOptions,
   ) {
-    const count = await this.jobApplicationModel.countDocuments({
-      organizationUserId,
-    });
+    // 1. Find all job IDs created by this organization
+    const orgJobs = await this.jobModel
+      .find({ organizationUserId })
+      .select('_id')
+      .lean();
+    const orgJobIds = orgJobs.map((j) => j._id);
 
-    if (count === 0) {
-      const initialApplicants = [
-        {
-          jobId: new Types.ObjectId(),
-          carerUserId: new Types.ObjectId(),
-          organizationUserId,
-          name: 'James Okafor',
-          initials: 'JO',
-          avatarBg: 'bg-emerald-600',
-          experience: '5 years',
-          role: 'Senior Care Assistant',
-          location: 'Manchester',
-          status: 'new',
-          matchScore: 87,
-          verified: true,
-          notes:
-            'Strong candidate — excellent dementia experience. Follow up re: availability.',
-          documents: [
-            { name: 'CV / Resume', size: '245 KB' },
-            { name: 'NVQ Certificate', size: '182 KB' },
-          ],
-        },
-        {
-          jobId: new Types.ObjectId(),
-          carerUserId: new Types.ObjectId(),
-          organizationUserId,
-          name: 'Emma Williams',
-          initials: 'EW',
-          avatarBg: 'bg-indigo-600',
-          experience: '8 years',
-          role: 'Registered Nurse',
-          location: 'Salford',
-          status: 'shortlisted',
-          matchScore: 92,
-          verified: true,
-          notes:
-            'Extensive clinical experience in dementia ward management and medication admin.',
-          documents: [
-            { name: 'CV / Resume', size: '310 KB' },
-            { name: 'Nursing Pin Certificate', size: '215 KB' },
-          ],
-        },
-        {
-          jobId: new Types.ObjectId(),
-          carerUserId: new Types.ObjectId(),
-          organizationUserId,
-          name: 'Priya Patel',
-          initials: 'PP',
-          avatarBg: 'bg-rose-600',
-          experience: '3 years',
-          role: 'Support Worker',
-          location: 'Stockport',
-          status: 'interview',
-          matchScore: 79,
-          verified: true,
-          notes: 'Interview scheduled for Tuesday 2:00 PM via video call.',
-          documents: [
-            { name: 'CV / Resume', size: '198 KB' },
-            { name: 'First Aid Certificate', size: '140 KB' },
-          ],
-        },
-        {
-          jobId: new Types.ObjectId(),
-          carerUserId: new Types.ObjectId(),
-          organizationUserId,
-          name: 'Michael Thompson',
-          initials: 'MT',
-          avatarBg: 'bg-blue-600',
-          experience: '7 years',
-          role: 'Senior Care Assistant',
-          location: 'Bolton',
-          status: 'new',
-          matchScore: 84,
-          verified: true,
-          notes:
-            'Reliable background in residential care and complex physical support.',
-          documents: [
-            { name: 'CV / Resume', size: '220 KB' },
-            { name: 'DBS Enhanced Check', size: '175 KB' },
-          ],
-        },
-        {
-          jobId: new Types.ObjectId(),
-          carerUserId: new Types.ObjectId(),
-          organizationUserId,
-          name: 'Lisa Chen',
-          initials: 'LC',
-          avatarBg: 'bg-teal-600',
-          experience: '10 years',
-          role: 'Registered Nurse',
-          location: 'Wigan',
-          status: 'hired',
-          matchScore: 95,
-          verified: true,
-          notes: 'Offer accepted! Induction scheduled for next Monday.',
-          documents: [
-            { name: 'CV / Resume', size: '280 KB' },
-            { name: 'References & Clearances', size: '320 KB' },
-          ],
-        },
-      ];
+    let orgUserObjId: Types.ObjectId | null = null;
+    try {
+      if (Types.ObjectId.isValid(organizationUserId)) {
+        orgUserObjId = new Types.ObjectId(organizationUserId);
+      }
+    } catch (e) {}
 
-      await this.jobApplicationModel.insertMany(initialApplicants);
-    }
+    const whereConditions: Record<string, unknown> = {
+      $or: [
+        { organizationUserId: organizationUserId },
+        ...(orgUserObjId ? [{ organizationUserId: orgUserObjId }] : []),
+        { jobId: { $in: orgJobIds } },
+      ],
+    };
 
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
-    const whereConditions = { organizationUserId };
 
-    const [total, applications] = await Promise.all([
+    const [total, rawApplications] = await Promise.all([
       this.jobApplicationModel.countDocuments(whereConditions),
       this.jobApplicationModel
         .find(whereConditions)
+        .populate('carerUserId', 'fullName email phoneNumber city role')
+        .populate('jobId', 'title city jobType')
         .skip(skip)
         .limit(limit)
         .sort({ [sortBy]: sortOrder })
         .lean(),
     ]);
 
+    const formatted = rawApplications.map((item: any) => {
+      const carer = item.carerUserId;
+      const job = item.jobId;
+      const name = item.name || carer?.fullName || carer?.email || 'Applicant';
+      const role = item.role || job?.title || 'Care Assistant';
+      const location = item.location || carer?.city || job?.city || 'United Kingdom';
+      const initials =
+        item.initials ||
+        (name
+          ? name
+              .split(' ')
+              .map((n: string) => n[0])
+              .join('')
+              .slice(0, 2)
+              .toUpperCase()
+          : 'AP');
+
+      return {
+        ...item,
+        name,
+        role,
+        location,
+        initials,
+        applied: item.appliedAt
+          ? new Date(item.appliedAt).toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })
+          : 'Recent',
+      };
+    });
+
     const totalPages = Math.ceil(total / limit) || 1;
 
     return {
       meta: { page, limit, total, totalPages },
-      data: applications,
+      data: formatted,
     };
   }
 

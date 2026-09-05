@@ -260,7 +260,7 @@ export class CompanyController {
 
   @Post('create-contact-request')
   @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family', 'carer', 'admin'))
   @ApiOperation({ summary: 'Create a contact request' })
   @ApiBody({ type: CreateContactRequestDto })
   @HttpCode(HttpStatus.CREATED)
@@ -268,8 +268,9 @@ export class CompanyController {
     @Req() req: Request,
     @Body() dto: CreateContactRequestDto,
   ) {
+    const userId = req.user!.id;
     const result = await this.companyService.createContactRequest(
-      req.user!.id,
+      userId,
       dto,
     );
     return {

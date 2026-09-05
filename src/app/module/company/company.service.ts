@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { fileUpload } from '../../helpers/fileUploder';
 import { IOptions } from '../../helpers/pagenation';
 import paginationHelper from '../../helpers/pagenation';
@@ -339,7 +339,18 @@ export class CompanyService {
     options: IOptions,
     statusFilter?: string,
   ) {
-    const count = await this.contactRequestModel.countDocuments({ userId });
+    let userObjId: any = null;
+    try {
+      if (Types.ObjectId.isValid(userId)) {
+        userObjId = new Types.ObjectId(userId);
+      }
+    } catch (e) {}
+
+    const userCondition: Record<string, any> = userObjId
+      ? { $or: [{ userId }, { userId: userObjId }] }
+      : { userId };
+
+    const count = await this.contactRequestModel.countDocuments(userCondition);
     if (count === 0) {
       const initial = [
         {
@@ -397,22 +408,22 @@ export class CompanyService {
 
     const [countAll, countPending, countAccepted, countRejected] =
       await Promise.all([
-        this.contactRequestModel.countDocuments({ userId }),
+        this.contactRequestModel.countDocuments(userCondition),
         this.contactRequestModel.countDocuments({
-          userId,
+          ...userCondition,
           status: 'Pending',
         }),
         this.contactRequestModel.countDocuments({
-          userId,
+          ...userCondition,
           status: 'Accepted',
         }),
         this.contactRequestModel.countDocuments({
-          userId,
+          ...userCondition,
           status: 'Rejected',
         }),
       ]);
 
-    const whereConditions: Record<string, any> = { userId };
+    const whereConditions: Record<string, any> = { ...userCondition };
     if (statusFilter && statusFilter !== 'All') {
       whereConditions.status =
         statusFilter.charAt(0).toUpperCase() +
@@ -445,9 +456,45 @@ export class CompanyService {
     };
   }
 
-  async createContactRequest(userId: string, dto: CreateContactRequestDto) {
-    const initials = dto.name
-      ? dto.name
+  async createContactRequest(
+    userId: string,
+    dto: CreateContactRequestDto,
+  ) {
+    const recipientUserId = dto.targetUserId || userId;
+    if (!recipientUserId) {
+      throw new HttpException(
+        'Recipient company or target user ID is required',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const senderUser = await this.userModel.findById(userId).lean();
+    if (!senderUser) {
+      throw new HttpException(
+        'User profile not found. Please log in again.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    const senderName =
+      senderUser.fullName ||
+      dto.name ||
+      senderUser.email?.split('@')[0] ||
+      'Inquirer';
+
+    const senderPhone =
+      senderUser.phoneNumber ||
+      dto.phone ||
+      senderUser.email ||
+      'N/A';
+
+    const rawRole = senderUser.role || 'family';
+    const formattedCategory =
+      rawRole.charAt(0).toUpperCase() +
+      rawRole.slice(1).replace(/_/g, ' ');
+
+    const initials = senderName
+      ? senderName
           .split(' ')
           .map((n: string) => n[0])
           .join('')
@@ -456,9 +503,16 @@ export class CompanyService {
       : 'CR';
 
     return await this.contactRequestModel.create({
-      ...dto,
+      userId: recipientUserId,
+      name: senderName,
+      phone: senderPhone,
+      category: dto.category || formattedCategory,
+      message:
+        dto.message ||
+        `Connection request from ${senderName} (${formattedCategory})`,
       initials: dto.initials || initials,
-      userId,
+      avatarBg: dto.avatarBg || 'bg-cyan-600',
+      time: dto.time || 'Just now',
       status: dto.status || 'Pending',
     });
   }
@@ -470,8 +524,20 @@ export class CompanyService {
   ) {
     const normalized =
       status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+
+    let userObjId: any = null;
+    try {
+      if (Types.ObjectId.isValid(userId)) {
+        userObjId = new Types.ObjectId(userId);
+      }
+    } catch (e) {}
+
+    const userCondition: Record<string, any> = userObjId
+      ? { $or: [{ userId }, { userId: userObjId }] }
+      : { userId };
+
     const result = await this.contactRequestModel.findOneAndUpdate(
-      { _id: id, userId },
+      { _id: id, ...userCondition },
       { status: normalized },
       { new: true },
     );

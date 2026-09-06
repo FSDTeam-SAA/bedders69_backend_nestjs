@@ -38,6 +38,12 @@ export class Agency {
   @Prop()
   documents?: string[];
 
+  @Prop()
+  logoUrl?: string;
+
+  @Prop()
+  bannerUrl?: string;
+
   @Prop({ enum: ['approved', 'pending', 'rejected'], default: 'pending' })
   status?: string;
 

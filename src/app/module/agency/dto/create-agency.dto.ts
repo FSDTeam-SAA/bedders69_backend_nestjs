@@ -87,4 +87,20 @@ export class CreateAgencyDto {
   @IsArray()
   @IsString({ each: true })
   documents?: string[];
+
+  @ApiPropertyOptional({
+    example: 'https://example.com/logo.png',
+    description: 'Agency logo URL or base64',
+  })
+  @IsOptional()
+  @IsString()
+  logoUrl?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://example.com/banner.jpg',
+    description: 'Agency banner URL or base64',
+  })
+  @IsOptional()
+  @IsString()
+  bannerUrl?: string;
 }

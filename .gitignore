@@ -2,7 +2,6 @@
 /dist
 /node_modules
 /build
-.env
 
 # Logs
 logs
@@ -40,7 +39,6 @@ lerna-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
-.env
 
 # temp directory
 .temp
@@ -65,3 +63,4 @@ production-env.md
 deployment-checklist.md
 mvp-test-coverage-gaps.md
 gstack_skill_cheatsheet.md
+config.bat

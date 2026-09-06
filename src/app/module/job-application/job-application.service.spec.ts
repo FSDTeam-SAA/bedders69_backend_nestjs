@@ -317,6 +317,7 @@ describe('JobApplicationService', () => {
         _id: 'app-id',
         jobId: 'job-id',
         status: 'pending',
+        save: jest.fn().mockResolvedValue(undefined),
       });
       jobModel.findById.mockReturnValue({
         lean: jest.fn().mockResolvedValue({

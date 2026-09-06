@@ -15,6 +15,8 @@ const buildNotificationLogModel = () => ({
 const buildLogDocument = (overrides: Record<string, unknown> = {}) => ({
   _id: 'notification-id',
   status: 'pending',
+  sentAt: undefined as Date | undefined,
+  errorMessage: undefined as string | undefined,
   save: jest.fn().mockResolvedValue(undefined),
   ...overrides,
 });

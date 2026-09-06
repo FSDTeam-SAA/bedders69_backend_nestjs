@@ -158,7 +158,7 @@ describe('WebhookService', () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await (service as any).handlePaymentIntentSucceeded(event, res);
 
-    expect(mockPayment.save).toBeUndefined();
+    expect((mockPayment as any).save).toBeUndefined();
     expect(entitlementModel.create).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });

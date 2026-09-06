@@ -224,7 +224,16 @@ describe('AdvertisementService', () => {
         userModel,
         notificationService,
       } = buildService();
-      const advertisement = {
+      const advertisement: {
+        _id: string;
+        advertiserUserId: string;
+        title: string;
+        status: string;
+        isActive: boolean;
+        approvedAt?: Date;
+        rejectedReason?: string;
+        save: jest.Mock;
+      } = {
         _id: 'ad-id',
         advertiserUserId: 'advertiser-id',
         title: 'Care bed sale',
@@ -279,7 +288,16 @@ describe('AdvertisementService', () => {
         userModel,
         notificationService,
       } = buildService();
-      const advertisement = {
+      const advertisement: {
+        _id: string;
+        advertiserUserId: string;
+        title: string;
+        status: string;
+        isActive: boolean;
+        approvedAt?: Date;
+        rejectedReason?: string;
+        save: jest.Mock;
+      } = {
         _id: 'ad-id',
         advertiserUserId: 'advertiser-id',
         title: 'Care bed sale',

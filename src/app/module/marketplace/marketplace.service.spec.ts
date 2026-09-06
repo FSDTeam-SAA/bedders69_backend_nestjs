@@ -246,7 +246,14 @@ describe('MarketplaceService', () => {
   describe('admin approval', () => {
     it('approves a pending marketplace listing and writes audit log', async () => {
       const { service, listingModel, auditLogModel } = buildService();
-      const listing = {
+      const listing: {
+        _id: string;
+        status: string;
+        isPublished: boolean;
+        publishedAt?: Date;
+        rejectedReason?: string;
+        save: jest.Mock;
+      } = {
         _id: 'listing-id',
         status: 'pending_approval',
         isPublished: false,
@@ -279,7 +286,14 @@ describe('MarketplaceService', () => {
 
     it('rejects a pending marketplace listing and writes audit log', async () => {
       const { service, listingModel, auditLogModel } = buildService();
-      const listing = {
+      const listing: {
+        _id: string;
+        status: string;
+        isPublished: boolean;
+        publishedAt?: Date;
+        rejectedReason?: string;
+        save: jest.Mock;
+      } = {
         _id: 'listing-id',
         status: 'pending_approval',
         isPublished: false,

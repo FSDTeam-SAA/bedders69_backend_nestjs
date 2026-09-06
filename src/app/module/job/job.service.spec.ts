@@ -57,6 +57,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -98,6 +99,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -127,6 +129,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -160,6 +163,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -184,6 +188,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -210,6 +215,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -241,6 +247,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -264,6 +271,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -295,6 +303,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -313,7 +322,13 @@ describe('JobService', () => {
       const userModel = buildUserModel();
       const jobAuditLogModel = buildJobAuditLogModel();
       const entitlementModel = buildEntitlementModel();
-      const mockJob = {
+      const mockJob: {
+        _id: string;
+        status: string;
+        isPublished: boolean;
+        publishedAt?: Date;
+        save: jest.Mock;
+      } = {
         _id: 'job-id',
         status: 'pending_approval',
         isPublished: false,
@@ -324,6 +339,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -361,10 +377,12 @@ describe('JobService', () => {
       jobModel.findById.mockResolvedValue({
         _id: 'job-id',
         status: 'draft',
+        save: jest.fn().mockResolvedValue(undefined),
       });
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -396,6 +414,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -436,6 +455,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -476,6 +496,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,
@@ -501,6 +522,7 @@ describe('JobService', () => {
 
       const service = new JobService(
         jobModel as any,
+        {} as any,
         userModel as any,
         jobAuditLogModel as any,
         entitlementModel as any,

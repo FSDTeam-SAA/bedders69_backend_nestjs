@@ -83,7 +83,7 @@ describe('AuthService', () => {
         { email: 'care-company@example.com', password: 'secret123' },
         buildResponse(),
       ),
-    ).rejects.toMatchObject<HttpException>({
+    ).rejects.toMatchObject({
       message: 'Account is not active',
     });
   });
@@ -203,7 +203,7 @@ describe('AuthService', () => {
         { cookies: { refreshToken: 'refresh-token' } } as any,
         buildResponse(),
       ),
-    ).rejects.toMatchObject<HttpException>({
+    ).rejects.toMatchObject({
       message: 'Account is not active',
     });
     expect(jwtService.sign).not.toHaveBeenCalled();

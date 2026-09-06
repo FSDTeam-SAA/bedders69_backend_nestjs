@@ -94,9 +94,26 @@ export class AgencyService {
   }
 
   async getMyProfile(userId: string) {
-    const agency = await this.agencyModel.findOne({ userId });
+    let agency = await this.agencyModel.findOne({ userId });
     if (!agency) {
-      throw new HttpException('Agency profile not found', HttpStatus.NOT_FOUND);
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new HttpException('Agency user not found', HttpStatus.NOT_FOUND);
+      }
+      agency = await this.agencyModel.create({
+        userId: user._id,
+        name: user.fullName || 'Agency Name',
+        email: user.email,
+        phoneNumber: user.phoneNumber || '',
+        registerNumber: '',
+        website: '',
+        discription: '',
+        address: user.address || '',
+        specialisations: [],
+        documents: [],
+        profileCompletionPercentage: 0,
+        profileCompletionStatus: 'incomplete',
+      });
     }
 
     return agency;

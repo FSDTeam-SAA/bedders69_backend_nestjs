@@ -31,6 +31,8 @@ import { NotificationModule } from './app/module/notification/notification.modul
 
 import { ServiceProviderModule } from './app/module/service-provider/service-provider.module';
 import { ProductSupplierModule } from './app/module/product-supplier/product-supplier.module';
+import { BannerModule } from './app/module/banner/banner.module';
+import { CareSkillModule } from './app/module/care-skill/care-skill.module';
 
 @Module({
   imports: [
@@ -62,6 +64,8 @@ import { ProductSupplierModule } from './app/module/product-supplier/product-sup
     NotificationModule,
     ServiceProviderModule,
     ProductSupplierModule,
+    BannerModule,
+    CareSkillModule,
   ],
   controllers: [AppController],
   providers: [AppService],

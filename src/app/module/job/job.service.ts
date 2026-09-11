@@ -264,6 +264,7 @@ export class JobService {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
     const {
       search,
+      category,
       city,
       postCode,
       jobType,
@@ -278,11 +279,55 @@ export class JobService {
     };
 
     if (search) {
+      const searchStr = String(search).trim();
       whereConditions.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { city: { $regex: search, $options: 'i' } },
+        { title: { $regex: searchStr, $options: 'i' } },
+        { description: { $regex: searchStr, $options: 'i' } },
+        { city: { $regex: searchStr, $options: 'i' } },
+        { location: { $regex: searchStr, $options: 'i' } },
+        { requiredSkills: { $elemMatch: { $regex: searchStr, $options: 'i' } } },
       ];
+    }
+
+    if (category && category !== 'All') {
+      const cat = String(category).toLowerCase().trim();
+      let categoryPattern: string;
+
+      if (cat.includes('nurs')) {
+        categoryPattern = 'nurse|nursing|rgn|rmn';
+      } else if (cat.includes('manage')) {
+        categoryPattern = 'manager|management|coordinator|supervisor|director|lead';
+      } else if (cat.includes('live-in') || cat.includes('live in')) {
+        categoryPattern = 'live-in|live in|livein';
+      } else if (cat.includes('night')) {
+        categoryPattern = 'night|waking';
+      } else if (cat.includes('support')) {
+        categoryPattern = 'support worker|supported living|support';
+      } else if (cat.includes('care assistant') || cat.includes('carer') || cat === 'care') {
+        categoryPattern = 'care assistant|carer|care worker|hca|healthcare assistant';
+      } else {
+        categoryPattern = cat;
+      }
+
+      const catRegex = { $regex: categoryPattern, $options: 'i' };
+      const categoryClause = {
+        $or: [
+          { title: catRegex },
+          { description: catRegex },
+          { department: catRegex },
+          { requiredSkills: { $elemMatch: catRegex } },
+        ],
+      };
+
+      if (whereConditions.$or) {
+        whereConditions.$and = [
+          { $or: whereConditions.$or },
+          categoryClause,
+        ];
+        delete whereConditions.$or;
+      } else {
+        whereConditions.$or = categoryClause.$or;
+      }
     }
     if (city) whereConditions.city = { $regex: city, $options: 'i' };
     if (postCode)

@@ -166,6 +166,20 @@ export class ProfileController {
     };
   }
 
+  @Get('community-stats')
+  @ApiOperation({
+    summary: 'Get public community stats and member avatars for hero banner',
+  })
+  @ApiOkResponse({ description: 'Community stats fetched successfully' })
+  @HttpCode(HttpStatus.OK)
+  async getCommunityStats() {
+    const result = await this.profileService.getCommunityStats();
+    return {
+      message: 'Community stats fetched successfully',
+      data: result,
+    };
+  }
+
   @Get('search-restricted-carers')
   @ApiBearerAuth('access-token')
   @UseGuards(

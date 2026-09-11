@@ -80,6 +80,9 @@ export class User {
   address?: string;
 
   @Prop()
+  postCode?: string;
+
+  @Prop()
   dateOfBirth?: Date;
 
   @Prop()

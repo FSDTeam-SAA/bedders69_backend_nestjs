@@ -104,14 +104,27 @@ export class ServiceProviderService {
   }
 
   async getMyProfile(userId: string) {
-    const serviceProvider = await this.serviceProviderModel.findOne({
+    let serviceProvider = await this.serviceProviderModel.findOne({
       userId,
     });
     if (!serviceProvider) {
-      throw new HttpException(
-        'Service provider profile not found',
-        HttpStatus.NOT_FOUND,
-      );
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new HttpException(
+          'Service provider user not found',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      serviceProvider = await this.serviceProviderModel.create({
+        userId: user._id,
+        name: user.fullName || 'Service Provider',
+        companyName: user.fullName || 'Service Provider',
+        email: user.email,
+        phoneNumber: user.phoneNumber || '',
+        profileCompletionPercentage: 0,
+        profileCompletionStatus: 'incomplete',
+      });
     }
 
     return serviceProvider;

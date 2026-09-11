@@ -125,12 +125,35 @@ export class CompanyService {
   }
 
   async getMyProfile(userId: string) {
-    const company = await this.companyModel.findOne({ userId });
+    let company = await this.companyModel.findOne({ userId });
     if (!company) {
-      throw new HttpException(
-        'Care company profile not found',
-        HttpStatus.NOT_FOUND,
-      );
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new HttpException(
+          'Care company user not found',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const baseName = (user.fullName || '').trim() || 'Care Company';
+      const existingWithName = await this.companyModel.findOne({
+        companyName: baseName,
+      });
+      const companyName = existingWithName
+        ? `${baseName} (${String(user._id).slice(-4)})`
+        : baseName;
+
+      company = await this.companyModel.create({
+        userId: user._id,
+        companyName,
+        email: user.email,
+        phoneNumber: user.phoneNumber || '',
+        address: user.address || '',
+        postCode: (user as unknown as { postCode?: string }).postCode || '',
+        profileCompletionPercentage: 0,
+        profileCompletionStatus: 'incomplete',
+        status: 'pending',
+      });
     }
 
     return company;

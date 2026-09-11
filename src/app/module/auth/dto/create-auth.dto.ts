@@ -33,6 +33,26 @@ export class CreateAuthDto {
   @IsOptional()
   @IsEnum(USER_ROLES)
   role?: UserRole;
+
+  @ApiProperty({ required: false, example: '+44 123 456789' })
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @ApiProperty({ required: false, example: '123 High Street' })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @ApiProperty({ required: false, example: 'London' })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiProperty({ required: false, example: 'SW1A 1AA' })
+  @IsOptional()
+  @IsString()
+  postCode?: string;
 }
 
 export class LoginAuthDto {

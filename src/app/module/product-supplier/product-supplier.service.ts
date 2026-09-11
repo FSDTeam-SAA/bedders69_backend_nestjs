@@ -108,14 +108,29 @@ export class ProductSupplierService {
   }
 
   async getMyProfile(userId: string) {
-    const productSupplier = await this.productSupplierModel.findOne({
+    let productSupplier = await this.productSupplierModel.findOne({
       userId,
     });
     if (!productSupplier) {
-      throw new HttpException(
-        'Product supplier profile not found',
-        HttpStatus.NOT_FOUND,
-      );
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new HttpException(
+          'Product supplier user not found',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      productSupplier = await this.productSupplierModel.create({
+        userId: user._id,
+        name: user.fullName || 'Supplier Name',
+        email: user.email,
+        phoneNumber: user.phoneNumber || '',
+        country: user.country || '',
+        address: user.address || '',
+        postCode: (user as unknown as { postCode?: string }).postCode || '',
+        profileCompletionPercentage: 0,
+        profileCompletionStatus: 'incomplete',
+      });
     }
 
     return productSupplier;

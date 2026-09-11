@@ -76,9 +76,29 @@ export class FamilyService {
   }
 
   async getMyProfile(userId: string) {
-    const family = await this.familyModel.findOne({ userId });
+    let family = await this.familyModel.findOne({ userId });
     if (!family) {
-      throw new HttpException('Family profile not found', HttpStatus.NOT_FOUND);
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new HttpException('Family user not found', HttpStatus.NOT_FOUND);
+      }
+
+      const names = (user.fullName || '').trim().split(/\s+/);
+      const firstName = names[0] || 'Family';
+      const lastName = names.slice(1).join(' ') || 'User';
+
+      family = await this.familyModel.create({
+        userId: user._id,
+        firstName,
+        lastName,
+        email: user.email,
+        phoneNumber: user.phoneNumber || '',
+        city: user.city || '',
+        street: user.address || '',
+        postCode: (user as unknown as { postCode?: string }).postCode || '',
+        profileCompletionPercentage: 0,
+        profileCompletionStatus: 'incomplete',
+      });
     }
 
     return family;

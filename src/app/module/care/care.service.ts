@@ -144,9 +144,23 @@ export class CareService {
   }
 
   async getMyProfile(userId: string) {
-    const care = await this.careModel.findOne({ userId });
+    let care = await this.careModel.findOne({ userId });
     if (!care) {
-      throw new HttpException('Carer profile not found', HttpStatus.NOT_FOUND);
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        throw new HttpException('Carer user not found', HttpStatus.NOT_FOUND);
+      }
+
+      care = await this.careModel.create({
+        userId: user._id,
+        careName: user.fullName || 'Carer Name',
+        email: user.email,
+        phoneNumber: user.phoneNumber || '',
+        address: user.address || '',
+        postCode: (user as unknown as { postCode?: string }).postCode || '',
+        profileCompletionPercentage: 0,
+        profileCompletionStatus: 'incomplete',
+      });
     }
 
     return care;

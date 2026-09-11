@@ -751,4 +751,79 @@ export class ProfileService {
       })),
     };
   }
+
+  async getCommunityStats() {
+    const [
+      totalUsers,
+      totalCarers,
+      totalCompanies,
+      totalAgencies,
+      recentCarers,
+      recentUsers,
+    ] = await Promise.all([
+      this.userModel.countDocuments({ status: { $ne: 'deleted' as UserStatus } }),
+      this.careModel.countDocuments(),
+      this.companyModel.countDocuments({ status: 'approved' }),
+      this.organizationProfileModel.countDocuments({
+        profileType: 'agency',
+        status: 'approved',
+      }),
+      this.careModel
+        .find({
+          profilePicture: { $exists: true, $ne: '' },
+        })
+        .select('careName profilePicture')
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .lean(),
+      this.userModel
+        .find({
+          profilePicture: { $exists: true, $ne: '' },
+          status: 'active',
+        })
+        .select('fullName profilePicture role')
+        .sort({ createdAt: -1 })
+        .limit(8)
+        .lean(),
+    ]);
+
+    const memberAvatars: Array<{ name: string; image: string; role?: string }> = [];
+
+    // Collect carers first
+    for (const c of recentCarers) {
+      if (c.profilePicture && !memberAvatars.some((a) => a.image === c.profilePicture)) {
+        memberAvatars.push({
+          name: (c as any).careName || 'Carer',
+          image: c.profilePicture,
+          role: 'Carer',
+        });
+      }
+      if (memberAvatars.length >= 4) break;
+    }
+
+    // Then other users if needed
+    for (const u of recentUsers) {
+      if (memberAvatars.length >= 6) break;
+      if (u.profilePicture && !memberAvatars.some((a) => a.image === u.profilePicture)) {
+        memberAvatars.push({
+          name: (u as any).fullName || 'Member',
+          image: u.profilePicture,
+          role: (u as any).role || 'Member',
+        });
+      }
+    }
+
+    const calculatedTotal = Math.max(
+      totalUsers,
+      totalCarers + totalCompanies + totalAgencies,
+    );
+
+    return {
+      totalMembers: calculatedTotal,
+      totalCarers,
+      totalCompanies,
+      totalAgencies,
+      avatars: memberAvatars,
+    };
+  }
 }

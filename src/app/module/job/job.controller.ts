@@ -130,6 +130,7 @@ export class JobController {
   @Get('search-jobs')
   @ApiOperation({ summary: 'Search approved public jobs' })
   @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'category', required: false, type: String })
   @ApiQuery({ name: 'city', required: false, type: String })
   @ApiQuery({ name: 'postCode', required: false, type: String })
   @ApiQuery({ name: 'jobType', required: false, type: String })
@@ -145,6 +146,7 @@ export class JobController {
   async searchJobs(@Req() req: Request) {
     const filters = pick(req.query, [
       'search',
+      'category',
       'city',
       'postCode',
       'jobType',

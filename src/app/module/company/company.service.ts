@@ -248,83 +248,12 @@ export class CompanyService {
   }
 
   async getSavedCarers(userId: string) {
-    const count = await this.savedCarerModel.countDocuments({ userId });
-    if (count === 0) {
-      // Seed default initial saved carers for rich demo experience
-      const initial = [
-        {
-          carerId: '1',
-          name: 'Matthew Warkentin',
-          rating: 4.9,
-          reviews: 67,
-          location: 'London, N1',
-          bio: 'Compassionate Care Assistant with 5+ years supporting elderly and vulnerable adults.',
-          skills: ['Dementia Care', 'Medication Admin'],
-          experience: '2 Years',
-          verified: 'DBS Verified',
-          rate: '$150/hrs',
-          available: true,
-          image:
-            'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=800&q=80',
-          qualifications: [
-            'NVQ Level 3 Health & Social Care',
-            'First Aid Certificate (2023)',
-            'Dementia Care Training',
-          ],
-          availability:
-            'Mon–Fri 7am–6pm · Sat 8am–2pm · Emergency 24/7 · Weekends · Day Shifts · Night Shifts · Live-In',
-          serviceArea: 'Manchester, Greater Manchester',
-        },
-        {
-          carerId: '2',
-          name: 'Sarah Palmer',
-          rating: 4.7,
-          reviews: 35,
-          location: 'Birmingham, B2',
-          bio: 'Dedicated Support Worker with a focus on mental health and well-being.',
-          skills: ['Mental Health Support', 'Crisis Intervention'],
-          experience: '3 Years',
-          verified: 'DBS Verified',
-          rate: '$120/hrs',
-          available: true,
-          image:
-            'https://images.unsplash.com/photo-1594824813527-39908cf8b5cf?auto=format&fit=crop&w=800&q=80',
-          qualifications: [
-            'BSc Psychology',
-            'Mental Health First Aid',
-            'Crisis Prevention Certificate',
-          ],
-          availability: 'Mon–Fri 8am–5pm · Weekends · Day Shifts',
-          serviceArea: 'Birmingham, West Midlands',
-        },
-        {
-          carerId: '3',
-          name: 'John Smith',
-          rating: 4.8,
-          reviews: 50,
-          location: 'Manchester, M1',
-          bio: 'Experienced Home Carer specialized in personal care and companionship.',
-          skills: ['Personal Care', 'Companionship'],
-          experience: '4 Years',
-          verified: 'DBS Verified',
-          rate: '$140/hrs',
-          available: true,
-          image:
-            'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=800&q=80',
-          qualifications: [
-            'Care Certificate',
-            'Moving & Handling Qualified',
-            'Food Hygiene Level 2',
-          ],
-          availability: 'Flexible · Day & Night Shifts',
-          serviceArea: 'Manchester, Greater Manchester',
-        },
-      ];
-
-      await this.savedCarerModel.insertMany(
-        initial.map((item) => ({ ...item, userId })),
-      );
-    }
+    // Clean up any previously auto-seeded dummy saved carers
+    await this.savedCarerModel.deleteMany({
+      userId,
+      name: { $in: ['Matthew Warkentin', 'Sarah Palmer', 'John Smith'] },
+      carerId: { $in: ['1', '2', '3'] },
+    });
 
     return await this.savedCarerModel.find({ userId }).sort({ createdAt: -1 });
   }
@@ -373,61 +302,26 @@ export class CompanyService {
       ? { $or: [{ userId }, { userId: userObjId }] }
       : { userId };
 
-    const count = await this.contactRequestModel.countDocuments(userCondition);
-    if (count === 0) {
-      const initial = [
-        {
-          userId,
-          name: 'Margaret Turner',
-          initials: 'MT',
-          avatarBg: 'bg-cyan-600',
-          category: 'Family',
-          status: 'Pending',
-          message:
-            "I'm looking for residential care for my 82-year-old mother. Could you advise on availability?",
-          time: 'Today 11:30',
-          phone: '07700 900 123',
-        },
-        {
-          userId,
-          name: 'Dr. Sarah Hammond',
-          initials: 'SH',
-          avatarBg: 'bg-indigo-600',
-          category: 'Healthcare Professional',
-          status: 'Pending',
-          message:
-            "I'd like to discuss a partnership referral arrangement for our patients.",
-          time: 'Today 09:15',
-          phone: '07700 900 456',
-        },
-        {
-          userId,
-          name: 'Robert Wilson',
-          initials: 'RW',
-          avatarBg: 'bg-teal-600',
-          category: 'Family',
-          status: 'Accepted',
-          message:
-            'Seeking respite care services for 2 weeks starting next month for my father.',
-          time: 'Yesterday 16:40',
-          phone: '07700 900 789',
-        },
-        {
-          userId,
-          name: 'Arthur Lewis',
-          initials: 'AL',
-          avatarBg: 'bg-rose-600',
-          category: 'Individual',
-          status: 'Rejected',
-          message:
-            'Inquiring about immediate live-in care outside your primary service area.',
-          time: '3 days ago',
-          phone: '07700 900 999',
-        },
-      ];
-
-      await this.contactRequestModel.insertMany(initial);
-    }
+    // Clean up any previously auto-seeded dummy requests for this user
+    await this.contactRequestModel.deleteMany({
+      ...userCondition,
+      name: {
+        $in: [
+          'Margaret Turner',
+          'Dr. Sarah Hammond',
+          'Robert Wilson',
+          'Arthur Lewis',
+        ],
+      },
+      phone: {
+        $in: [
+          '07700 900 123',
+          '07700 900 456',
+          '07700 900 789',
+          '07700 900 999',
+        ],
+      },
+    });
 
     const [countAll, countPending, countAccepted, countRejected] =
       await Promise.all([
@@ -605,42 +499,18 @@ export class CompanyService {
 
     return {
       company: {
-        companyName: profile?.companyName || 'Sunrise Care Services',
+        companyName: profile?.companyName || '',
         tradingName:
-          profile?.tradingName || profile?.companyName || 'Sunrise Care',
-        logo: profile?.logo || '/images/logo.png',
+          profile?.tradingName || profile?.companyName || '',
+        logo: profile?.logo || '',
       },
       metrics: {
-        profileViews: 620,
-        activeJobs: activeJobsCount > 0 ? activeJobsCount : 8,
-        newApplicants: applicantsCount > 0 ? applicantsCount : 47,
-        contactRequests: contactRequestsCount > 0 ? contactRequestsCount : 6,
+        profileViews: (profile as any)?.profileViews || 0,
+        activeJobs: activeJobsCount || 0,
+        newApplicants: applicantsCount || 0,
+        contactRequests: contactRequestsCount || 0,
       },
-      recentApplicants:
-        formattedRecentApplicants.length > 0
-          ? formattedRecentApplicants
-          : [
-              {
-                name: 'James Okafor',
-                role: 'Senior Care Assistant',
-                time: '10m ago',
-              },
-              {
-                name: 'Emma Williams',
-                role: 'Registered Nurse',
-                time: '2h ago',
-              },
-              {
-                name: 'Priya Patel',
-                role: 'Support Worker',
-                time: 'Yesterday',
-              },
-              {
-                name: 'Michael Thompson',
-                role: 'Care Manager',
-                time: 'Yesterday',
-              },
-            ],
+      recentApplicants: formattedRecentApplicants,
     };
   }
 }

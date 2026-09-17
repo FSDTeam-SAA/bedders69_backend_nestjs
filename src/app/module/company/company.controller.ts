@@ -113,7 +113,8 @@ export class CompanyController {
   @ApiNotFoundResponse({ description: 'Care company profile not found' })
   @HttpCode(HttpStatus.OK)
   async getMyProfile(@Req() req: Request) {
-    const result = await this.companyService.getMyProfile(req.user!.id);
+    const userId = (req.user as any)?.id || (req.user as any)?._id;
+    const result = await this.companyService.getMyProfile(userId);
     return {
       message: 'Care company profile fetched successfully',
       data: result,

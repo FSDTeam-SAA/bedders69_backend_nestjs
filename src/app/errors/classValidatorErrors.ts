@@ -20,5 +20,6 @@ export function handleClassValidatorErrors(errors: ValidationError[]): {
   };
 
   extract(errors);
-  return { message: 'Validation Error', errorSources };
+  const specificMessage = errorSources.map((e) => e.message).filter(Boolean).join(', ');
+  return { message: specificMessage || 'Validation Error', errorSources };
 }

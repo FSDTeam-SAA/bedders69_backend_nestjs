@@ -16,7 +16,10 @@ export class CreateAuthDto {
   fullName!: string;
 
   @ApiProperty({ example: 'saurav@example.com' })
-  @IsEmail({}, { message: 'Valid email is required' })
+  @IsEmail(
+    { require_tld: true },
+    { message: 'Please provide a valid email address' },
+  )
   @IsNotEmpty()
   email!: string;
 
@@ -57,7 +60,10 @@ export class CreateAuthDto {
 
 export class LoginAuthDto {
   @ApiProperty({ example: 'saurav@example.com' })
-  @IsEmail({}, { message: 'Valid email is required' })
+  @IsEmail(
+    { require_tld: true },
+    { message: 'Please provide a valid email address' },
+  )
   @IsNotEmpty()
   email!: string;
 
@@ -69,14 +75,20 @@ export class LoginAuthDto {
 
 export class ForgotPasswordDto {
   @ApiProperty({ example: 'saurav@example.com' })
-  @IsEmail({}, { message: 'Valid email is required' })
+  @IsEmail(
+    { require_tld: true },
+    { message: 'Please provide a valid email address' },
+  )
   @IsNotEmpty()
   email!: string;
 }
 
 export class VerifyEmailDto {
   @ApiProperty({ example: 'saurav@example.com' })
-  @IsEmail({}, { message: 'Valid email is required' })
+  @IsEmail(
+    { require_tld: true },
+    { message: 'Please provide a valid email address' },
+  )
   @IsNotEmpty()
   email!: string;
 
@@ -88,7 +100,10 @@ export class VerifyEmailDto {
 
 export class ResetPasswordDto {
   @ApiProperty({ example: 'saurav@example.com' })
-  @IsEmail({}, { message: 'Valid email is required' })
+  @IsEmail(
+    { require_tld: true },
+    { message: 'Please provide a valid email address' },
+  )
   @IsNotEmpty()
   email!: string;
 

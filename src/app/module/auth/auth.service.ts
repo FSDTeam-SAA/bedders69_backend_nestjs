@@ -195,14 +195,16 @@ export class AuthService {
   }
 
   async sendVerificationOtp(email: string) {
-    const user = await this.userModel.findOne({ email });
-    const generateOtpNumber = Math.floor(100000 + Math.random() * 900000);
-
-    if (user) {
-      user.otp = generateOtpNumber.toString();
-      user.otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
-      await user.save();
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await this.userModel.findOne({ email: normalizedEmail });
+    if (!user) {
+      throw new HttpException('User not found', 404);
     }
+
+    const generateOtpNumber = Math.floor(100000 + Math.random() * 900000);
+    user.otp = generateOtpNumber.toString();
+    user.otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save();
 
     const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
@@ -218,7 +220,7 @@ export class AuthService {
   `;
 
     try {
-      await sendMailer(email, 'Bedders - Email Verification OTP', html);
+      await sendMailer(normalizedEmail, 'Bedders - Email Verification OTP', html);
     } catch (err) {
       console.error('Failed to send mail:', err);
     }
@@ -227,11 +229,17 @@ export class AuthService {
   }
 
   async verifyEmail(email: string, otp: string) {
-    const user = await this.userModel.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedOtp = String(otp ?? '').trim();
+    const user = await this.userModel.findOne({ email: normalizedEmail });
     if (!user) throw new HttpException('User not found', 404);
 
-    if (user.otp && user.otp !== otp) throw new HttpException('Invalid OTP', 400);
-    if (user.otpExpiry && user.otpExpiry < new Date()) throw new HttpException('OTP expired', 400);
+    if (!user.otp || !user.otpExpiry || user.otp !== normalizedOtp) {
+      throw new HttpException('Invalid OTP', 400);
+    }
+    if (user.otpExpiry < new Date()) {
+      throw new HttpException('OTP expired', 400);
+    }
 
     user.otp = undefined as any;
     user.otpExpiry = undefined as any;

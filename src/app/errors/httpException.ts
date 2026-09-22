@@ -16,9 +16,10 @@ export function handleHttpException(err: HttpException): {
     Array.isArray((response as any).message)
   ) {
     const messages: string[] = (response as any).message;
+    const specificMessage = messages.filter(Boolean).join(', ');
     return {
       statusCode,
-      message: 'Validation Error',
+      message: specificMessage || 'Validation Error',
       errorSources: messages.map((msg) => ({ path: '', message: msg })),
     };
   }

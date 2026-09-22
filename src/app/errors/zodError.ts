@@ -6,12 +6,14 @@ export function handleZodError(err: ZodError): {
   message: string;
   errorSources: TErrorSource[];
 } {
+  const errorSources = err.issues.map((issue) => ({
+    path: String(issue.path.at(-1) ?? ''),
+    message: issue.message,
+  }));
+  const specificMessage = errorSources.map((e) => e.message).filter(Boolean).join(', ');
   return {
     statusCode: 400,
-    message: 'Validation Error',
-    errorSources: err.issues.map((issue) => ({
-      path: String(issue.path.at(-1) ?? ''),
-      message: issue.message,
-    })),
+    message: specificMessage || 'Validation Error',
+    errorSources,
   };
 }

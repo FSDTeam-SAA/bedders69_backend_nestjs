@@ -10,13 +10,16 @@ export function handleDuplicateKeyError(
 } {
   const field = err.keyValue ? Object.keys(err.keyValue)[0] : '';
   const value = err.keyValue ? String(Object.values(err.keyValue)[0]) : '';
+  const message = field
+    ? `'${value}' already exists for field '${field}'`
+    : 'Duplicate Entry';
   return {
     statusCode: 409,
-    message: 'Duplicate Entry',
+    message,
     errorSources: [
       {
         path: field,
-        message: `'${value}' already exists for field '${field}'`,
+        message,
       },
     ],
   };

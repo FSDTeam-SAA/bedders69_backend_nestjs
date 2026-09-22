@@ -8,12 +8,14 @@ export function handleMongooseValidationError(
   message: string;
   errorSources: TErrorSource[];
 } {
+  const errorSources = Object.values(err.errors).map((e) => ({
+    path: e.path,
+    message: e.message,
+  }));
+  const specificMessage = errorSources.map((e) => e.message).filter(Boolean).join(', ');
   return {
     statusCode: 400,
-    message: 'Validation Error',
-    errorSources: Object.values(err.errors).map((e) => ({
-      path: e.path,
-      message: e.message,
-    })),
+    message: specificMessage || 'Validation Error',
+    errorSources,
   };
 }

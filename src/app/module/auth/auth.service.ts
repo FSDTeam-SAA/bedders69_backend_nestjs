@@ -1,6 +1,6 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { User, UserDocument } from '../user/entities/user.entity';
+import { User, UserDocument, UserStatus } from '../user/entities/user.entity';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Request, Response } from 'express';
@@ -75,9 +75,15 @@ export class AuthService {
     if (user) {
       throw new HttpException('User already exists', 400);
     }
+    const defaultStatus: UserStatus =
+      (CreateAuthDto.status as UserStatus) ||
+      (CreateAuthDto.role === 'admin' || CreateAuthDto.role === 'family'
+        ? 'active'
+        : 'pending');
+
     const newUser = await this.userModel.create({
       ...CreateAuthDto,
-      status: 'active',
+      status: defaultStatus,
     });
     return this.sanitizeUser(newUser);
   }
@@ -100,8 +106,8 @@ export class AuthService {
 
     const safeUser = this.sanitizeUser(user);
     const status = user.status ?? safeUser?.status;
-    if (status !== 'active') {
-      throw new HttpException('Account is not active', 403);
+    if (status === 'suspended' || status === 'rejected') {
+      throw new HttpException(`Account is ${status}`, 403);
     }
 
     const tokenPayload = this.buildTokenPayload({

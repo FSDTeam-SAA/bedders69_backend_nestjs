@@ -42,6 +42,11 @@ export class CreateAuthDto {
   @IsString()
   phoneNumber?: string;
 
+  @ApiProperty({ required: false, example: 'pending' })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
   @ApiProperty({ required: false, example: '123 High Street' })
   @IsOptional()
   @IsString()

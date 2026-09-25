@@ -129,11 +129,38 @@ export class UserService {
       detailsMap.set(detail.userId.toString(), detail);
     });
 
-    // 5. Merge details into each user
-    const data = users.map((user) => ({
-      ...user,
-      details: detailsMap.get(user._id.toString()) || null,
-    }));
+    // 5. Merge details into each user & sync user.status with details status
+    const data = await Promise.all(
+      users.map(async (user) => {
+        const details = detailsMap.get(user._id.toString()) || null;
+        let computedStatus = user.status;
+
+        if (details) {
+          if (details.status) {
+            if (details.status === 'approved') computedStatus = 'active';
+            else if (details.status === 'pending') computedStatus = 'pending';
+            else if (details.status === 'rejected') computedStatus = 'rejected';
+            else if (details.status === 'suspended') computedStatus = 'suspended';
+          } else if (typeof details.isActive !== 'undefined') {
+            if (!details.isActive && user.status === 'active') {
+              computedStatus = 'pending';
+            }
+          }
+        }
+
+        if (computedStatus !== user.status) {
+          await this.userModel.findByIdAndUpdate(user._id, {
+            status: computedStatus,
+          });
+        }
+
+        return {
+          ...user,
+          status: computedStatus,
+          details,
+        };
+      }),
+    );
 
     return {
       meta: {

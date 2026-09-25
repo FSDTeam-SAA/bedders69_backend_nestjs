@@ -74,6 +74,7 @@ export class AgencyService {
       fullName: createAgencyDto.name,
       phoneNumber: createAgencyDto.phoneNumber,
       address: createAgencyDto.address,
+      status: 'pending',
     });
 
     const documents = await this.uploadMultipleFiles(files?.documents);

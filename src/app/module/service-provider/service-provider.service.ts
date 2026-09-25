@@ -77,6 +77,7 @@ export class ServiceProviderService {
       password: createServiceProviderDto.password,
       fullName: createServiceProviderDto.name,
       phoneNumber: createServiceProviderDto.phoneNumber,
+      status: 'pending',
     });
 
     const logo = await this.uploadSingleFile(files?.logo?.[0]);

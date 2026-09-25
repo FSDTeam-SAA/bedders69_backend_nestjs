@@ -87,6 +87,7 @@ export class CareService {
       address: createCareDto.address,
       dateOfBirth: createCareDto.dateOfBirth,
       gender: createCareDto.gender,
+      status: 'pending',
     });
 
     const profilePicture = await this.uploadSingleFile(
@@ -137,6 +138,7 @@ export class CareService {
     const care = await this.careModel.create({
       ...carePayload,
       userId: newUser._id,
+      isActive: false,
       ...this.getCompletion({ ...carePayload }),
     });
 

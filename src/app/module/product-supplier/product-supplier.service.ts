@@ -81,6 +81,7 @@ export class ProductSupplierService {
       phoneNumber: createProductSupplierDto.phoneNumber,
       country: createProductSupplierDto.country,
       address: createProductSupplierDto.address,
+      status: 'pending',
     });
 
     const logo = await this.uploadSingleFile(files?.logo?.[0]);

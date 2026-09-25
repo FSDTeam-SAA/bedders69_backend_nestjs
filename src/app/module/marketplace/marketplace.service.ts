@@ -24,6 +24,7 @@ import {
   MarketplaceListingDocument,
 } from './entities/marketplace-listing.entity';
 import { NotificationService } from '../notification/notification.service';
+import { Product, ProductDocument } from '../product/entities/product.entity';
 
 type PopulatedMarketplaceEntitlement = EntitlementDocument & {
   package?: { type?: string };
@@ -35,6 +36,7 @@ type PopulatedMarketplaceEntitlement = EntitlementDocument & {
 @Injectable()
 export class MarketplaceService {
   constructor(
+
     @InjectModel(MarketplaceListing.name)
     private readonly listingModel: Model<MarketplaceListingDocument>,
     @InjectModel(MarketplaceInquiry.name)
@@ -45,6 +47,8 @@ export class MarketplaceService {
     private readonly userModel: Model<UserDocument>,
     @InjectModel(Entitlement.name)
     private readonly entitlementModel: Model<EntitlementDocument>,
+    @InjectModel(Product.name)
+    private readonly productModel: Model<ProductDocument>,
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -278,7 +282,8 @@ export class MarketplaceService {
           Number(maxPrice);
     }
 
-    const [total, listings] = await Promise.all([
+    // Fetch marketplace listings
+    const [listingTotal, listings] = await Promise.all([
       this.listingModel.countDocuments(whereConditions),
       this.listingModel
         .find(whereConditions)
@@ -292,9 +297,61 @@ export class MarketplaceService {
         .lean(),
     ]);
 
+    // Fetch products (treated as marketplace items)
+    const productWhere: Record<string, unknown> = {
+      status: 'active',
+    };
+    if (search) {
+      productWhere.$or = ['productName', 'description'].map((field) => ({
+        [field]: { $regex: search, $options: 'i' },
+      }));
+    }
+    const [productTotal, products] = await Promise.all([
+      this.productModel.countDocuments(productWhere as any),
+      this.productModel
+        .find(productWhere as any)
+        .populate('categoryId', 'name')
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .lean(),
+    ]);
+
+    // Map products to the same shape as marketplace listings
+    const mappedProducts = (products as any[]).map((p) => ({
+      _id: p._id,
+      title: p.productName,
+      description: p.description,
+      category: (p.categoryId as any)?.name || '',
+      price: p.price,
+      currency: 'USD', // default, adjust if you have currency field
+      city: p.city || '',
+      postCode: p.postCode || '',
+      photos: p.photo || [],
+      viewCount: 0,
+      inquiryCount: 0,
+      publishedAt: p.createdAt,
+      createdAt: p.createdAt,
+      sellerUserId: p.supplierId,
+    }));
+
+    // Combine listings and products, avoid duplicates based on id
+    const combinedMap = new Map<string, any>();
+    listings.forEach((l) => {
+      combinedMap.set(String(l._id), this.toPublicListing(l));
+    });
+    mappedProducts.forEach((p) => {
+      if (!combinedMap.has(String(p._id))) {
+        combinedMap.set(String(p._id), this.toPublicListing(p));
+      }
+    });
+
+    const combinedList = Array.from(combinedMap.values()).slice(0, limit);
+    const total = Math.max(listingTotal + productTotal, combinedList.length);
+
     return {
       meta: { page, limit, total },
-      data: listings.map((listing: any) => this.toPublicListing(listing)),
+      data: combinedList,
     };
   }
 

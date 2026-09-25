@@ -3,6 +3,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import paginationHelper, { IOptions } from 'src/app/helpers/pagenation';
 import { IFilterParams } from 'src/app/helpers/pick';
+import { Agency, AgencyDocument } from '../agency/entities/agency.entity';
+import {
+  ProductSupplier,
+  ProductSupplierDocument,
+} from '../product-supplier/entities/product-supplier.entity';
+import {
+  ServiceProvider,
+  ServiceProviderDocument,
+} from '../service-provider/entities/service-provider.entity';
 import { Care, CareDocument } from '../care/entities/care.entity';
 import { Company, CompanyDocument } from '../company/entities/company.entity';
 import { Family, FamilyDocument } from '../family/entities/family.entity';
@@ -63,6 +72,12 @@ export class ProfileService {
     private readonly companyModel: Model<CompanyDocument>,
     @InjectModel(Care.name)
     private readonly careModel: Model<CareDocument>,
+    @InjectModel(Agency.name)
+    private readonly agencyModel: Model<AgencyDocument>,
+    @InjectModel(ProductSupplier.name)
+    private readonly productSupplierModel: Model<ProductSupplierDocument>,
+    @InjectModel(ServiceProvider.name)
+    private readonly serviceProviderModel: Model<ServiceProviderDocument>,
     @InjectModel(Payment.name)
     private readonly paymentModel: Model<PaymentDocument>,
     @InjectModel(Entitlement.name)
@@ -290,6 +305,24 @@ export class ProfileService {
       profile = await this.companyModel.findOne({ userId }).lean();
     } else if (role === 'carer') {
       profile = await this.careModel.findOne({ userId }).lean();
+    } else if (role === 'agency') {
+      profile =
+        (await this.agencyModel.findOne({ userId }).lean()) ||
+        (await this.organizationProfileModel
+          .findOne({ userId, profileType: role })
+          .lean());
+    } else if (role === 'supplier') {
+      profile =
+        (await this.productSupplierModel.findOne({ userId }).lean()) ||
+        (await this.organizationProfileModel
+          .findOne({ userId, profileType: role })
+          .lean());
+    } else if (role === 'service_provider') {
+      profile =
+        (await this.serviceProviderModel.findOne({ userId }).lean()) ||
+        (await this.organizationProfileModel
+          .findOne({ userId, profileType: role })
+          .lean());
     } else if (this.isOrganizationProfileType(role)) {
       profile = await this.organizationProfileModel
         .findOne({ userId, profileType: role })
@@ -376,6 +409,40 @@ export class ProfileService {
       return;
     }
 
+    if (role === 'agency') {
+      await this.agencyModel.findOneAndUpdate({ userId }, { status });
+      await this.organizationProfileModel.findOneAndUpdate(
+        { userId, profileType: role },
+        { status },
+      );
+      return;
+    }
+
+    if (role === 'supplier') {
+      await this.productSupplierModel.findOneAndUpdate({ userId }, { status });
+      await this.organizationProfileModel.findOneAndUpdate(
+        { userId, profileType: role },
+        { status },
+      );
+      return;
+    }
+
+    if (role === 'service_provider') {
+      await this.serviceProviderModel.findOneAndUpdate({ userId }, { status });
+      await this.organizationProfileModel.findOneAndUpdate(
+        { userId, profileType: role },
+        { status },
+      );
+      return;
+    }
+
+    if (role === 'carer') {
+      const isActive =
+        action === 'approve-profile' || action === 'reactivate-profile';
+      await this.careModel.findOneAndUpdate({ userId }, { isActive });
+      return;
+    }
+
     if (this.isOrganizationProfileType(role)) {
       await this.organizationProfileModel.findOneAndUpdate(
         { userId, profileType: role },
@@ -458,49 +525,170 @@ export class ProfileService {
     options: IOptions,
   ) {
     const { limit, page, skip, sortBy, sortOrder } = paginationHelper(options);
-    const whereConditions: Record<string, unknown> = {
-      ...this.buildSearchConditions(params, [
-        'organizationName',
+
+    let specificModelResults: any[] = [];
+    let specificModelTotal = 0;
+
+    if (profileType === 'agency') {
+      const searchCond = this.buildSearchConditions(params, [
+        'name',
         'email',
         'address',
-        'city',
-        'postCode',
-        'services',
-      ]),
+        'discription',
+        'specialisations',
+      ]);
+      const whereConditions = { ...searchCond, status: 'approved' };
+      const [count, items] = await Promise.all([
+        this.agencyModel.countDocuments(whereConditions as any),
+        this.agencyModel
+          .find(whereConditions as any)
+          .skip(skip)
+          .limit(limit)
+          .sort({ [sortBy]: sortOrder })
+          .lean(),
+      ]);
+      specificModelTotal = count;
+      specificModelResults = items.map((a: any) => ({
+        id: a._id,
+        organizationName: a.name || 'Agency Name',
+        email: a.email,
+        phoneNumber: a.phoneNumber || '',
+        address: a.address || '',
+        city: a.city || a.address || '',
+        postCode: a.postCode || '',
+        websiteLink: a.website || '',
+        description: a.discription || '',
+        services: a.specialisations || [],
+        status: a.status || 'approved',
+        profileCompletionStatus: a.profileCompletionStatus || 'complete',
+        createdAt: a.createdAt,
+      }));
+    } else if (profileType === 'supplier') {
+      const searchCond = this.buildSearchConditions(params, [
+        'name',
+        'storeName',
+        'email',
+        'address',
+        'description',
+      ]);
+      const whereConditions = { ...searchCond, status: 'approved' };
+      const [count, items] = await Promise.all([
+        this.productSupplierModel.countDocuments(whereConditions as any),
+        this.productSupplierModel
+          .find(whereConditions as any)
+          .skip(skip)
+          .limit(limit)
+          .sort({ [sortBy]: sortOrder })
+          .lean(),
+      ]);
+      specificModelTotal = count;
+      specificModelResults = items.map((s: any) => ({
+        id: s._id,
+        organizationName: s.storeName || s.name || 'Supplier Name',
+        email: s.email,
+        phoneNumber: s.phoneNumber || '',
+        address: s.address || '',
+        city: s.state || s.city || '',
+        postCode: s.postCode || '',
+        websiteLink: s.websiteLink || '',
+        description: s.description || '',
+        services: [],
+        status: s.status || 'approved',
+        profileCompletionStatus: s.profileCompletionStatus || 'complete',
+        createdAt: s.createdAt,
+      }));
+    } else if (profileType === 'service_provider') {
+      const searchCond = this.buildSearchConditions(params, [
+        'name',
+        'companyName',
+        'email',
+        'address',
+        'bussinessDescription',
+      ]);
+      const whereConditions = { ...searchCond, status: 'approved' };
+      const [count, items] = await Promise.all([
+        this.serviceProviderModel.countDocuments(whereConditions as any),
+        this.serviceProviderModel
+          .find(whereConditions as any)
+          .skip(skip)
+          .limit(limit)
+          .sort({ [sortBy]: sortOrder })
+          .lean(),
+      ]);
+      specificModelTotal = count;
+      specificModelResults = items.map((sp: any) => ({
+        id: sp._id,
+        organizationName: sp.companyName || sp.name || 'Service Provider',
+        email: sp.email,
+        phoneNumber: sp.phoneNumber || '',
+        address: sp.address || '',
+        city: sp.serviceCoverArea || sp.city || '',
+        postCode: sp.postCode || '',
+        websiteLink: sp.websiteLink || '',
+        description: sp.bussinessDescription || '',
+        services: [],
+        status: sp.status || 'approved',
+        profileCompletionStatus: sp.profileCompletionStatus || 'complete',
+        createdAt: sp.createdAt,
+      }));
+    }
+
+    const orgSearchCond = this.buildSearchConditions(params, [
+      'organizationName',
+      'email',
+      'address',
+      'city',
+      'postCode',
+      'services',
+    ]);
+    const orgWhereConditions = {
+      ...orgSearchCond,
       profileType,
       status: 'approved',
     };
 
-    const [total, profiles] = await Promise.all([
-      this.organizationProfileModel.countDocuments(whereConditions as any),
+    const [orgTotal, orgProfiles] = await Promise.all([
+      this.organizationProfileModel.countDocuments(orgWhereConditions as any),
       this.organizationProfileModel
-        .find(whereConditions as any)
-        .select(
-          'organizationName email phoneNumber address city postCode websiteLink description services status profileCompletionStatus createdAt',
-        )
+        .find(orgWhereConditions as any)
         .skip(skip)
         .limit(limit)
         .sort({ [sortBy]: sortOrder })
         .lean(),
     ]);
 
+    const mappedOrgProfiles = orgProfiles.map((profile: any) => ({
+      id: profile._id,
+      organizationName: profile.organizationName,
+      email: profile.email,
+      phoneNumber: profile.phoneNumber || '',
+      address: profile.address || '',
+      city: profile.city || '',
+      postCode: profile.postCode || '',
+      websiteLink: profile.websiteLink || '',
+      description: profile.description || '',
+      services: profile.services || [],
+      status: profile.status,
+      profileCompletionStatus: profile.profileCompletionStatus,
+      createdAt: profile.createdAt,
+    }));
+
+    const combinedMap = new Map<string, any>();
+    specificModelResults.forEach((item) => {
+      combinedMap.set(item.email || String(item.id), item);
+    });
+    mappedOrgProfiles.forEach((item) => {
+      if (!combinedMap.has(item.email || String(item.id))) {
+        combinedMap.set(item.email || String(item.id), item);
+      }
+    });
+
+    const combinedList = Array.from(combinedMap.values());
+    const total = Math.max(specificModelTotal + orgTotal, combinedList.length);
+
     return {
       meta: { page, limit, total },
-      data: profiles.map((profile: any) => ({
-        id: profile._id,
-        organizationName: profile.organizationName,
-        email: profile.email,
-        phoneNumber: profile.phoneNumber,
-        address: profile.address,
-        city: profile.city,
-        postCode: profile.postCode,
-        websiteLink: profile.websiteLink,
-        description: profile.description,
-        services: profile.services || [],
-        status: profile.status,
-        profileCompletionStatus: profile.profileCompletionStatus,
-        createdAt: profile.createdAt,
-      })),
+      data: combinedList.slice(0, limit),
     };
   }
 

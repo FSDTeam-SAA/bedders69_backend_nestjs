@@ -84,6 +84,7 @@ export class CompanyService {
       fullName: createCompanyDto.companyName,
       phoneNumber: createCompanyDto.phoneNumber,
       address: createCompanyDto.address,
+      status: 'pending',
     });
 
     const logo = files?.logo?.[0];

@@ -50,6 +50,9 @@ export class ServiceProvider {
     longitude: number;
   };
 
+  @Prop({ enum: ['approved', 'pending', 'rejected', 'suspended'], default: 'pending' })
+  status?: string;
+
   @Prop({ enum: ['incomplete', 'complete'], default: 'incomplete' })
   profileCompletionStatus!: string;
 

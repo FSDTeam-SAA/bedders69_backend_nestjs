@@ -13,6 +13,15 @@ import {
   ProfileAuditLog,
   ProfileAuditLogSchema,
 } from './entities/profile-audit-log.entity';
+import { Agency, AgencySchema } from '../agency/entities/agency.entity';
+import {
+  ProductSupplier,
+  ProductSupplierSchema,
+} from '../product-supplier/entities/product-supplier.entity';
+import {
+  ServiceProvider,
+  ServiceProviderSchema,
+} from '../service-provider/entities/service-provider.entity';
 import { ProfileController } from './profile.controller';
 import { ProfileService } from './profile.service';
 import {
@@ -32,6 +41,9 @@ import { NotificationModule } from '../notification/notification.module';
       { name: Family.name, schema: FamilySchema },
       { name: Company.name, schema: CompanySchema },
       { name: Care.name, schema: CareSchema },
+      { name: Agency.name, schema: AgencySchema },
+      { name: ProductSupplier.name, schema: ProductSupplierSchema },
+      { name: ServiceProvider.name, schema: ServiceProviderSchema },
       { name: Payment.name, schema: PaymentSchema },
       { name: Entitlement.name, schema: EntitlementSchema },
       { name: Package.name, schema: PackageSchema },

@@ -20,6 +20,7 @@ import {
 import { MarketplaceController } from './marketplace.controller';
 import { MarketplaceService } from './marketplace.service';
 import { NotificationModule } from '../notification/notification.module';
+import { Product, ProductSchema } from '../product/entities/product.entity';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { NotificationModule } from '../notification/notification.module';
       { name: MarketplaceAuditLog.name, schema: MarketplaceAuditLogSchema },
       { name: User.name, schema: UserSchema },
       { name: Entitlement.name, schema: EntitlementSchema },
+      { name: Product.name, schema: ProductSchema },
     ]),
   ],
   controllers: [MarketplaceController],

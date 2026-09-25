@@ -48,8 +48,11 @@ export default function AuthGuard(...roles: string[]): Type<CanActivate> {
           secret: config.jwt.accessTokenSecret,
         });
 
-        if (decoded?.status && decoded.status !== 'active') {
-          throw new HttpException('Account is not active', 403);
+        if (
+          decoded?.status &&
+          (decoded.status === 'suspended' || decoded.status === 'rejected')
+        ) {
+          throw new HttpException(`Account is ${decoded.status}`, 403);
         }
 
         if (roles.length && !isOptional && !roles.includes(decoded.role)) {

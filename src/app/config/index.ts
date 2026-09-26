@@ -13,6 +13,8 @@ export default {
   port: toNumber(process.env.PORT, 3000),
   env: process.env.NODE_ENV || 'development',
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  frontendUrl:
+    process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000',
   mongoUri:
     process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/nestjs_boilerplate',
   isMongoEnabled: true,

@@ -14,6 +14,12 @@ export class Payment {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Package' })
   package?: Types.ObjectId;
 
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'MembershipPlan' })
+  membershipPlan?: Types.ObjectId;
+
+  @Prop()
+  stripeCheckoutSessionId?: string;
+
   @Prop()
   amount!: number;
 

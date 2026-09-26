@@ -8,6 +8,10 @@ import {
   SubscribeDocument,
 } from '../subscribe/entities/subscribe.entity';
 import { Package, PackageDocument } from '../package/entities/package.entity';
+import {
+  MembershipPlan,
+  MembershipPlanDocument,
+} from '../membership-plan/entities/membership-plan.entity';
 import Stripe from 'stripe';
 import config from 'src/app/config';
 import { IFilterParams } from 'src/app/helpers/pick';
@@ -26,6 +30,8 @@ export class PaymentService {
     private readonly subscribeModel: Model<SubscribeDocument>,
     @InjectModel(Package.name)
     private readonly packageModel: Model<PackageDocument>,
+    @InjectModel(MembershipPlan.name)
+    private readonly membershipPlanModel: Model<MembershipPlanDocument>,
   ) {
     if (config.stripe.secretKey) {
       this.stripe = new Stripe(config.stripe.secretKey);
@@ -291,5 +297,60 @@ export class PaymentService {
       amount: pkg.price,
       packageId: pkg._id,
     };
+  }
+
+  async createMembershipCheckout(userId: string, membershipPlanId: string) {
+    const stripe = this.getStripeClient();
+    const [user, plan] = await Promise.all([
+      this.userModel.findById(userId),
+      this.membershipPlanModel.findById(membershipPlanId),
+    ]);
+    if (!user) throw new HttpException('User not found', 404);
+    if (!plan) throw new HttpException('Membership plan not found', 404);
+    if (plan.price <= 0) throw new HttpException('Free plans do not require checkout', 400);
+
+    const existingPayment = await this.paymentModel.findOne({
+      user: user._id,
+      membershipPlan: plan._id,
+      status: 'completed',
+    });
+    if (existingPayment) throw new HttpException('You already have this membership plan', 400);
+
+    const baseUrl = config.frontendUrl.replace(/\/+$/, '');
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      customer_email: user.email,
+      success_url: `${baseUrl}/membership/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/membership?checkout=cancelled`,
+      metadata: {
+        userId: user._id.toString(),
+        membershipPlanId: plan._id.toString(),
+        paymentType: 'membership',
+      },
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: 'gbp',
+          unit_amount: Math.round(plan.price * 100),
+          product_data: { name: plan.title, description: plan.content },
+        },
+      }],
+    });
+    if (!session.url) throw new HttpException('Stripe checkout URL could not be created', 500);
+
+    await this.paymentModel.findOneAndUpdate(
+      { user: user._id, membershipPlan: plan._id, status: 'pending' },
+      {
+        user: user._id,
+        membershipPlan: plan._id,
+        amount: plan.price,
+        paymentType: 'membership',
+        status: 'pending',
+        stripeCheckoutSessionId: session.id,
+      },
+      { upsert: true, new: true },
+    );
+
+    return { checkoutUrl: session.url, checkoutSessionId: session.id };
   }
 }

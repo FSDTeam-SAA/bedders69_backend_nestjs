@@ -14,6 +14,7 @@ import {
   EntitlementSchema,
 } from '../entitlement/entities/entitlement.entity';
 import { NotificationModule } from '../notification/notification.module';
+import { MembershipPlan, MembershipPlanSchema } from '../membership-plan/entities/membership-plan.entity';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { NotificationModule } from '../notification/notification.module';
       { name: Subscribe.name, schema: SubscribeSchema },
       { name: Package.name, schema: PackageSchema },
       { name: Entitlement.name, schema: EntitlementSchema },
+      { name: MembershipPlan.name, schema: MembershipPlanSchema },
     ]),
   ],
   controllers: [WebhookController],

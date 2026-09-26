@@ -16,6 +16,7 @@ import {
 } from '../entitlement/entities/entitlement.entity';
 import type { Response } from 'express';
 import { NotificationService } from '../notification/notification.service';
+import { MembershipPlan, MembershipPlanDocument } from '../membership-plan/entities/membership-plan.entity';
 
 @Injectable()
 export class WebhookService {
@@ -37,6 +38,8 @@ export class WebhookService {
 
     @InjectModel(Entitlement.name)
     private readonly entitlementModel: Model<EntitlementDocument>,
+    @InjectModel(MembershipPlan.name)
+    private readonly membershipPlanModel: Model<MembershipPlanDocument>,
     private readonly notificationService: NotificationService,
   ) {
     if (config.stripe.secretKey) {
@@ -71,6 +74,9 @@ export class WebhookService {
 
         case 'payment_intent.payment_failed':
           await this.handlePaymentIntentFailed(event, res);
+          break;
+        case 'checkout.session.completed':
+          await this.handleMembershipCheckoutCompleted(event, res);
           break;
 
         default:
@@ -208,6 +214,22 @@ export class WebhookService {
     }
 
     return res.json({ received: true });
+  }
+
+  private async handleMembershipCheckoutCompleted(event: Stripe.Event, res: Response) {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const payment = await this.paymentModel.findOne({ stripeCheckoutSessionId: session.id });
+    if (!payment) return res.json({ received: true });
+    payment.status = 'completed';
+    if (typeof session.payment_intent === 'string') payment.stripePaymentIntentId = session.payment_intent;
+    await payment.save();
+    const plan = await this.membershipPlanModel.findById(payment.membershipPlan);
+    if (plan && !plan.members.some((id) => id.toString() === payment.user.toString())) {
+      plan.members.push(payment.user);
+      await plan.save();
+    }
+    await this.notifyPayment(payment, 'payment_succeeded');
+    return res.json({ received: true, type: 'membership' });
   }
 
   private async notifyPayment(

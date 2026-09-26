@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 
 export type MembershipPlanDocument = HydratedDocument<MembershipPlan>;
 
@@ -22,6 +23,9 @@ export class MembershipPlan {
 
   @Prop({ default: false })
   isPopular!: boolean;
+
+  @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'User', default: [] })
+  members!: Types.ObjectId[];
 }
 
 export const MembershipPlanSchema =

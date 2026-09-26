@@ -80,6 +80,22 @@ export class PaymentController {
     };
   }
 
+  @Post('create-membership-checkout/:membershipPlanId')
+  @ApiOperation({ summary: 'Create a Stripe Checkout session for a membership plan' })
+  @ApiBearerAuth('access-token')
+  @UseGuards(AuthGuard(...USER_ROLES))
+  @HttpCode(HttpStatus.CREATED)
+  async createMembershipCheckout(
+    @Req() req: Request,
+    @Param('membershipPlanId') membershipPlanId: string,
+  ) {
+    const result = await this.paymentService.createMembershipCheckout(
+      req.user!.id,
+      membershipPlanId,
+    );
+    return { message: 'Membership checkout created successfully', data: result };
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all payments' })
   @ApiBearerAuth('access-token')

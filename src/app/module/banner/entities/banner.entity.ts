@@ -14,6 +14,9 @@ export class Banner {
   @Prop()
   imagePublicId?: string;
 
+  @Prop({ enum: ['image', 'raw'], default: 'image' })
+  imageResourceType?: 'image' | 'raw';
+
   @Prop({ trim: true })
   description?: string;
 

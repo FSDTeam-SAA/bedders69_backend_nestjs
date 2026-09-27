@@ -35,11 +35,11 @@ const uploadToCloudinary = async (
       {
         folder: config.cloudinary.folder,
         resource_type: 'auto',
-        transformation: {
-          width: 500,
-          height: 500,
-          crop: 'limit',
-        },
+        // transformation: {
+        //   width: 500,
+        //   height: 500,
+        //   crop: 'limit',
+        // },
       },
       (error, result) => {
         if (error) return reject(error);

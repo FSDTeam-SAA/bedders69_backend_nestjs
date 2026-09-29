@@ -87,7 +87,7 @@
     "flatted": "^3.4.2",
     "fast-uri": "^3.1.4",
     "picomatch": "^4.0.5",
-    "js-yaml": "^5.2.2"
+    "js-yaml": "^5.4.2"
   },
   "jest": {
     "moduleFileExtensions": [

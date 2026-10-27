@@ -299,9 +299,26 @@ export class CompanyService {
       }
     } catch (e) {}
 
-    const userCondition: Record<string, any> = userObjId
-      ? { $or: [{ userId }, { userId: userObjId }] }
-      : { userId };
+    // Find company profile for this user to also match if any request was stored with company._id
+    let companyProfileId: any = null;
+    try {
+      const comp = await this.companyModel
+        .findOne({ $or: [{ userId }, ...(userObjId ? [{ userId: userObjId }] : [])] })
+        .select('_id')
+        .lean();
+      if (comp && comp._id) {
+        companyProfileId = comp._id;
+      }
+    } catch (e) {}
+
+    const idConditions: any[] = [{ userId }];
+    if (userObjId) idConditions.push({ userId: userObjId });
+    if (companyProfileId) {
+      idConditions.push({ userId: companyProfileId });
+      idConditions.push({ userId: String(companyProfileId) });
+    }
+
+    const userCondition: Record<string, any> = { $or: idConditions };
 
     // Clean up any previously auto-seeded dummy requests for this user
     await this.contactRequestModel.deleteMany({
@@ -378,13 +395,26 @@ export class CompanyService {
     userId: string,
     dto: CreateContactRequestDto,
   ) {
-    const recipientUserId = dto.targetUserId || userId;
+    let recipientUserId = dto.targetUserId || userId;
     if (!recipientUserId) {
       throw new HttpException(
         'Recipient company or target user ID is required',
         HttpStatus.BAD_REQUEST,
       );
     }
+
+    // Resolve if targetUserId is a Company profile document ID
+    try {
+      if (Types.ObjectId.isValid(recipientUserId)) {
+        const companyDoc = await this.companyModel
+          .findById(recipientUserId)
+          .select('userId')
+          .lean();
+        if (companyDoc && companyDoc.userId) {
+          recipientUserId = String(companyDoc.userId);
+        }
+      }
+    } catch (e) {}
 
     const senderUser = await this.userModel.findById(userId).lean();
     if (!senderUser) {
@@ -395,21 +425,21 @@ export class CompanyService {
     }
 
     const senderName =
-      senderUser.fullName ||
       dto.name ||
+      senderUser.fullName ||
       senderUser.email?.split('@')[0] ||
       'Inquirer';
 
     const senderPhone =
-      senderUser.phoneNumber ||
       dto.phone ||
+      senderUser.phoneNumber ||
       senderUser.email ||
       'N/A';
 
     const rawRole = senderUser.role || 'family';
     const formattedCategory =
-      rawRole.charAt(0).toUpperCase() +
-      rawRole.slice(1).replace(/_/g, ' ');
+      dto.category ||
+      (rawRole.charAt(0).toUpperCase() + rawRole.slice(1).replace(/_/g, ' '));
 
     const initials = senderName
       ? senderName
@@ -424,10 +454,10 @@ export class CompanyService {
       userId: recipientUserId,
       name: senderName,
       phone: senderPhone,
-      category: dto.category || formattedCategory,
+      category: formattedCategory,
       message:
         dto.message ||
-        `Connection request from ${senderName} (${formattedCategory})`,
+        `Care inquiry from ${senderName} (${formattedCategory})`,
       initials: dto.initials || initials,
       avatarBg: dto.avatarBg || 'bg-cyan-600',
       time: dto.time || 'Just now',
@@ -450,9 +480,26 @@ export class CompanyService {
       }
     } catch (e) {}
 
-    const userCondition: Record<string, any> = userObjId
-      ? { $or: [{ userId }, { userId: userObjId }] }
-      : { userId };
+    // Find company profile for this user to also match if any request was stored with company._id
+    let companyProfileId: any = null;
+    try {
+      const comp = await this.companyModel
+        .findOne({ $or: [{ userId }, ...(userObjId ? [{ userId: userObjId }] : [])] })
+        .select('_id')
+        .lean();
+      if (comp && comp._id) {
+        companyProfileId = comp._id;
+      }
+    } catch (e) {}
+
+    const idConditions: any[] = [{ userId }];
+    if (userObjId) idConditions.push({ userId: userObjId });
+    if (companyProfileId) {
+      idConditions.push({ userId: companyProfileId });
+      idConditions.push({ userId: String(companyProfileId) });
+    }
+
+    const userCondition: Record<string, any> = { $or: idConditions };
 
     const result = await this.contactRequestModel.findOneAndUpdate(
       { _id: id, ...userCondition },
@@ -471,6 +518,34 @@ export class CompanyService {
   }
 
   async getDashboardOverview(userId: string) {
+    let userObjId: any = null;
+    try {
+      if (Types.ObjectId.isValid(userId)) {
+        userObjId = new Types.ObjectId(userId);
+      }
+    } catch (e) {}
+
+    let companyProfileId: any = null;
+    try {
+      const comp = await this.companyModel
+        .findOne({ $or: [{ userId }, ...(userObjId ? [{ userId: userObjId }] : [])] })
+        .select('_id')
+        .lean();
+      if (comp && comp._id) {
+        companyProfileId = comp._id;
+      }
+    } catch (e) {}
+
+    const contactUserCondition: any = {
+      $or: [
+        { userId },
+        ...(userObjId ? [{ userId: userObjId }] : []),
+        ...(companyProfileId
+          ? [{ userId: companyProfileId }, { userId: String(companyProfileId) }]
+          : []),
+      ],
+    };
+
     const [
       profile,
       activeJobsCount,
@@ -481,7 +556,7 @@ export class CompanyService {
       this.companyModel.findOne({ userId }).lean(),
       this.jobModel.countDocuments({ organizationUserId: userId }),
       this.jobApplicationModel.countDocuments({ organizationUserId: userId }),
-      this.contactRequestModel.countDocuments({ userId }),
+      this.contactRequestModel.countDocuments(contactUserCondition),
       this.jobApplicationModel
         .find({ organizationUserId: userId })
         .sort({ createdAt: -1 })

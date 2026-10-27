@@ -490,7 +490,7 @@ export class ProfileService {
       this.companyModel
         .find(whereConditions)
         .select(
-          'companyName email phoneNumber address postCode websiteLink logo coverPhoto coverageRegions serviceOffered status profileCompletionStatus createdAt',
+          'companyName email phoneNumber address postCode websiteLink logo coverPhoto coverageRegions serviceOffered status profileCompletionStatus createdAt userId',
         )
         .skip(skip)
         .limit(limit)
@@ -502,6 +502,7 @@ export class ProfileService {
       meta: { page, limit, total },
       data: companies.map((company: any) => ({
         id: company._id,
+        userId: company.userId ? String(company.userId) : undefined,
         companyName: company.companyName,
         email: company.email,
         phoneNumber: company.phoneNumber,

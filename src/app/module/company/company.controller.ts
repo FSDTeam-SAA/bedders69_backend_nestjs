@@ -183,7 +183,7 @@ export class CompanyController {
 
   @Post('save-carer')
   @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @UseGuards(AuthGuard('care_company'))
   @ApiOperation({ summary: 'Save/Bookmark a carer' })
   @ApiBody({ type: CreateSavedCarerDto })
   @HttpCode(HttpStatus.CREATED)
@@ -197,7 +197,7 @@ export class CompanyController {
 
   @Get('get-saved-carers')
   @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @UseGuards(AuthGuard('care_company'))
   @ApiOperation({ summary: 'Get all saved carers for current company' })
   @HttpCode(HttpStatus.OK)
   async getSavedCarers(@Req() req: Request) {
@@ -210,7 +210,7 @@ export class CompanyController {
 
   @Get('get-saved-carers/:carerId')
   @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @UseGuards(AuthGuard('care_company'))
   @ApiOperation({ summary: 'Get a specific saved carer detail' })
   @ApiParam({ name: 'carerId', type: String })
   @HttpCode(HttpStatus.OK)
@@ -224,7 +224,7 @@ export class CompanyController {
 
   @Delete('remove-saved-carer/:carerId')
   @ApiBearerAuth('access-token')
-  @UseGuards(AuthGuard('care_company', 'agency', 'supplier', 'service_provider', 'family'))
+  @UseGuards(AuthGuard('care_company'))
   @ApiOperation({ summary: 'Remove a carer from saved list' })
   @ApiParam({ name: 'carerId', type: String })
   @HttpCode(HttpStatus.OK)

@@ -93,6 +93,12 @@ export class User {
   postCode?: string;
 
   @Prop()
+  registerNumber?: string;
+
+  @Prop()
+  website?: string;
+
+  @Prop()
   dateOfBirth?: Date;
 
   @Prop()

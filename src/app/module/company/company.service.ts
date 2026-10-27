@@ -201,6 +201,30 @@ export class CompanyService {
         ).postCode!;
         needsCompanyUpdate = true;
       }
+      if (
+        !company.registerNumber &&
+        (user as unknown as { registerNumber?: string }).registerNumber
+      ) {
+        companyUpdates.registerNumber = (
+          user as unknown as { registerNumber?: string }
+        ).registerNumber;
+        company.registerNumber = (
+          user as unknown as { registerNumber?: string }
+        ).registerNumber!;
+        needsCompanyUpdate = true;
+      }
+      if (
+        !company.websiteLink &&
+        (user as unknown as { website?: string }).website
+      ) {
+        companyUpdates.websiteLink = (
+          user as unknown as { website?: string }
+        ).website;
+        company.websiteLink = (
+          user as unknown as { website?: string }
+        ).website!;
+        needsCompanyUpdate = true;
+      }
       if (!company.userId || String(company.userId) !== String(user._id)) {
         companyUpdates.userId = user._id;
         company.userId = user._id;
@@ -230,6 +254,20 @@ export class CompanyService {
       }
       if (!user.fullName && company.companyName) {
         userUpdates.fullName = company.companyName;
+        needsUserUpdate = true;
+      }
+      if (
+        !(user as unknown as { registerNumber?: string }).registerNumber &&
+        company.registerNumber
+      ) {
+        (userUpdates as any).registerNumber = company.registerNumber;
+        needsUserUpdate = true;
+      }
+      if (
+        !(user as unknown as { website?: string }).website &&
+        company.websiteLink
+      ) {
+        (userUpdates as any).website = company.websiteLink;
         needsUserUpdate = true;
       }
 
@@ -306,6 +344,12 @@ export class CompanyService {
     }
     if (updateCompanyDto.postCode) {
       linkedUserUpdate.postCode = updateCompanyDto.postCode;
+    }
+    if (updateCompanyDto.registerNumber) {
+      linkedUserUpdate.registerNumber = updateCompanyDto.registerNumber;
+    }
+    if (updateCompanyDto.websiteLink) {
+      linkedUserUpdate.website = updateCompanyDto.websiteLink;
     }
 
     if (Object.keys(linkedUserUpdate).length) {

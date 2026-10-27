@@ -141,6 +141,17 @@ export class AuthService {
           ? `${baseName} (${String(newUser._id).slice(-4)})`
           : baseName;
 
+        const regNum =
+          CreateAuthDto.registerNumber ||
+          CreateAuthDto.registrationNumber ||
+          (newUser as any).registerNumber ||
+          '';
+        const web =
+          CreateAuthDto.websiteLink ||
+          CreateAuthDto.website ||
+          (newUser as any).website ||
+          '';
+
         await this.companyModel.create({
           userId: newUser._id,
           companyName,
@@ -148,18 +159,31 @@ export class AuthService {
           phoneNumber: newUser.phoneNumber || '',
           address: newUser.address || '',
           postCode: (newUser as any).postCode || '',
+          registerNumber: regNum,
+          websiteLink: web,
           profileCompletionPercentage: 0,
           profileCompletionStatus: 'incomplete',
           status: 'pending',
         });
       } else if (this.agencyModel && newUser.role === 'agency') {
+        const regNum =
+          CreateAuthDto.registerNumber ||
+          CreateAuthDto.registrationNumber ||
+          (newUser as any).registerNumber ||
+          '';
+        const web =
+          CreateAuthDto.website ||
+          CreateAuthDto.websiteLink ||
+          (newUser as any).website ||
+          '';
+
         await this.agencyModel.create({
           userId: newUser._id,
           name: newUser.fullName || 'Agency Name',
           email: newUser.email,
           phoneNumber: newUser.phoneNumber || '',
-          registerNumber: '',
-          website: '',
+          registerNumber: regNum,
+          website: web,
           discription: '',
           address: newUser.address || '',
           specialisations: [],

@@ -71,6 +71,26 @@ export class CreateAuthDto {
   @IsOptional()
   @IsString()
   postCode?: string;
+
+  @ApiProperty({ required: false, example: '12345678' })
+  @IsOptional()
+  @IsString()
+  registrationNumber?: string;
+
+  @ApiProperty({ required: false, example: '12345678' })
+  @IsOptional()
+  @IsString()
+  registerNumber?: string;
+
+  @ApiProperty({ required: false, example: 'https://example.com' })
+  @IsOptional()
+  @IsString()
+  website?: string;
+
+  @ApiProperty({ required: false, example: 'https://example.com' })
+  @IsOptional()
+  @IsString()
+  websiteLink?: string;
 }
 
 export class LoginAuthDto {

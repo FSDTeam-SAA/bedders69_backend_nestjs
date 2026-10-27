@@ -147,6 +147,16 @@ export class AgencyService {
         agency.address = user.address;
         needsAgencyUpdate = true;
       }
+      if (!agency.registerNumber && (user as any).registerNumber) {
+        agencyUpdates.registerNumber = (user as any).registerNumber;
+        agency.registerNumber = (user as any).registerNumber;
+        needsAgencyUpdate = true;
+      }
+      if (!agency.website && (user as any).website) {
+        agencyUpdates.website = (user as any).website;
+        agency.website = (user as any).website;
+        needsAgencyUpdate = true;
+      }
       if (!agency.userId || String(agency.userId) !== String(user._id)) {
         agencyUpdates.userId = user._id;
         agency.userId = user._id;
@@ -169,6 +179,14 @@ export class AgencyService {
       }
       if (!user.fullName && agency.name) {
         userUpdates.fullName = agency.name;
+        needsUserUpdate = true;
+      }
+      if (!(user as any).registerNumber && agency.registerNumber) {
+        userUpdates.registerNumber = agency.registerNumber;
+        needsUserUpdate = true;
+      }
+      if (!(user as any).website && agency.website) {
+        userUpdates.website = agency.website;
         needsUserUpdate = true;
       }
 
@@ -216,6 +234,12 @@ export class AgencyService {
     }
     if (agencyPayload.address) {
       linkedUserUpdate.address = agencyPayload.address;
+    }
+    if (agencyPayload.registerNumber) {
+      linkedUserUpdate.registerNumber = agencyPayload.registerNumber;
+    }
+    if (agencyPayload.website) {
+      linkedUserUpdate.website = agencyPayload.website;
     }
 
     if (Object.keys(linkedUserUpdate).length) {

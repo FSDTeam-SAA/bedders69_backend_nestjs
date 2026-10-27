@@ -48,12 +48,12 @@ describe('NotificationService', () => {
         channel: 'email',
         status: 'pending',
         recipientEmail: 'care@example.com',
-        subject: 'Your Bedders profile has been approved',
+        subject: 'Your The Care Directory profile has been approved',
       }),
     );
     expect(sendMailer).toHaveBeenCalledWith(
       'care@example.com',
-      'Your Bedders profile has been approved',
+      'Your The Care Directory profile has been approved',
       expect.stringContaining('Care Company'),
     );
     expect(log.status).toBe('sent');

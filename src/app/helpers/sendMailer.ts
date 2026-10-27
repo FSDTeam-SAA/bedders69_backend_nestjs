@@ -16,10 +16,13 @@ const sendMailer = async (email: string, subject?: string, html?: string) => {
       pass: config.email.pass,
     },
   });
+  const senderName = config.email.senderName || 'The Care Directory';
+  const fromEmail = config.email.from || config.email.address;
+
   const info = await transporter.sendMail({
-    from: `"${config.email.senderName}" ${config.email.from || config.email.address}`,
+    from: `"${senderName}" <${fromEmail}>`,
     to: email,
-    subject,
+    subject: subject || 'Notification - The Care Directory',
     html,
   });
 

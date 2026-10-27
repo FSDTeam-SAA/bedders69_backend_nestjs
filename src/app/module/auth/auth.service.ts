@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 import * as jwt from '@nestjs/jwt';
 import config from '../../config';
 import sendMailer from 'src/app/helpers/sendMailer';
+import { generateOtpEmailTemplate } from 'src/app/helpers/emailTemplates';
 
 @Injectable()
 export class AuthService {
@@ -186,16 +187,20 @@ export class AuthService {
     user.otpExpiry = new Date(Date.now() + 60 * 60 * 1000);
     await user.save();
 
-    const html = `
-    <div style="font-family: Arial; text-align: center;">
-      <h2 style="color:#4f46e5;">Password Reset OTP</h2>
-      <p>Your OTP code is:</p>
-      <h1 style="letter-spacing:4px;">${generateOtpNumber}</h1>
-      <p>This code will expire in 1 hour.</p>
-    </div>
-  `;
+    const html = generateOtpEmailTemplate({
+      title: 'Password Reset Request',
+      description:
+        'We received a request to reset the password for your The Care Directory account. Use the following One-Time Password (OTP) to proceed with updating your credentials:',
+      otp: generateOtpNumber.toString(),
+      expiryMinutes: 60,
+      note: 'If you did not request a password reset, you can safely ignore this email. Your account remains completely secure.',
+    });
 
-    await sendMailer(user.email, 'Reset Password OTP', html);
+    await sendMailer(
+      user.email,
+      'The Care Directory - Password Reset OTP',
+      html,
+    );
 
     return { message: 'Check your email for OTP' };
   }
@@ -212,21 +217,21 @@ export class AuthService {
     user.otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
-    const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
-      <h2 style="color: #0e7490; text-align: center; margin-bottom: 8px;">Bedders Care Platform</h2>
-      <p style="color: #475569; text-align: center; font-size: 16px;">Use the following One-Time Password (OTP) to verify your email address:</p>
-      <div style="text-align: center; margin: 24px 0;">
-        <span style="display: inline-block; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #0f172a; padding: 12px 24px; background: #f0fdfa; border: 2px dashed #0e7490; border-radius: 8px;">
-          ${generateOtpNumber}
-        </span>
-      </div>
-      <p style="color: #64748b; font-size: 14px; text-align: center;">This OTP is valid for 15 minutes. If you did not request this, please ignore this email.</p>
-    </div>
-  `;
+    const html = generateOtpEmailTemplate({
+      title: 'Verify Your Email Address',
+      description:
+        'Welcome to The Care Directory! Use the following One-Time Password (OTP) to verify your email address and activate your account:',
+      otp: generateOtpNumber.toString(),
+      expiryMinutes: 15,
+      note: 'If you did not create an account on The Care Directory, please ignore this email.',
+    });
 
     try {
-      await sendMailer(normalizedEmail, 'Bedders - Email Verification OTP', html);
+      await sendMailer(
+        normalizedEmail,
+        'The Care Directory - Email Verification OTP',
+        html,
+      );
     } catch (err) {
       console.error('Failed to send mail:', err);
     }

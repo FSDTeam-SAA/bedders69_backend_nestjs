@@ -66,7 +66,7 @@ export class NotificationController {
             channel: 'email',
             status: 'sent',
             recipientEmail: 'care@example.com',
-            subject: 'Your Bedders profile has been approved',
+            subject: 'Your The Care Directory profile has been approved',
           },
         ],
       },

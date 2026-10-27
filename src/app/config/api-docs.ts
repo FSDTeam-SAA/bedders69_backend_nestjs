@@ -7,7 +7,7 @@ export const OPENAPI_JSON_PATH = '/api/openapi.json';
 export const SCALAR_DOCS_PATH = '/api/docs';
 
 const openApiDescription = `
-Bedders production API reference for the backend platform.
+The Care Directory production API reference for the backend platform.
 
 Use this reference to test authentication, profile onboarding, directories, packages, payments, jobs, marketplace listings, advertisements, notifications, and admin reporting.
 

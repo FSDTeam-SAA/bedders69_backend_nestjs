@@ -9,7 +9,7 @@ const toNumber = (value: string | undefined, fallback: number) => {
 };
 
 export default {
-  appName: process.env.APP_NAME || 'NestJS Boilerplate MongoDB',
+  appName: process.env.APP_NAME || 'The Care Directory',
   port: toNumber(process.env.PORT, 3000),
   env: process.env.NODE_ENV || 'development',
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
@@ -44,7 +44,7 @@ export default {
     from: process.env.EMAIL_FROM,
     to: process.env.EMAIL_TO,
     admin: process.env.ADMIN_EMAIL,
-    senderName: process.env.EMAIL_SENDER_NAME || 'NestJS Boilerplate',
+    senderName: process.env.EMAIL_SENDER_NAME || 'The Care Directory',
   },
   stripe: {
     publicKey: process.env.STRIPE_PUBLISHABLE_KEY,

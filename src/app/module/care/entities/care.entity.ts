@@ -41,6 +41,15 @@ export class Care {
   careName!: string;
 
   @Prop()
+  firstName?: string;
+
+  @Prop()
+  lastName?: string;
+
+  @Prop()
+  fullName?: string;
+
+  @Prop()
   profilePicture!: string;
 
   @Prop()

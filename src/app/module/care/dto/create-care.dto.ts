@@ -175,6 +175,27 @@ export class ExperienceDto {
 }
 
 export class CreateCareDto {
+  @ApiPropertyOptional({
+    example: 'John',
+  })
+  @IsOptional()
+  @IsString()
+  firstName?: string;
+
+  @ApiPropertyOptional({
+    example: 'Smith',
+  })
+  @IsOptional()
+  @IsString()
+  lastName?: string;
+
+  @ApiPropertyOptional({
+    example: 'John Smith',
+  })
+  @IsOptional()
+  @IsString()
+  fullName?: string;
+
   @ApiProperty({
     example: 'John Smith',
   })

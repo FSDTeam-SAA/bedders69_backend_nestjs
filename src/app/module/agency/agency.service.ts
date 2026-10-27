@@ -95,12 +95,20 @@ export class AgencyService {
   }
 
   async getMyProfile(userId: string) {
-    let agency = await this.agencyModel.findOne({ userId });
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new HttpException('Agency user not found', HttpStatus.NOT_FOUND);
+    }
+
+    let agency = await this.agencyModel.findOne({
+      $or: [
+        { userId: user._id },
+        { userId: String(user._id) },
+        ...(user.email ? [{ email: user.email }] : []),
+      ],
+    });
+
     if (!agency) {
-      const user = await this.userModel.findById(userId);
-      if (!user) {
-        throw new HttpException('Agency user not found', HttpStatus.NOT_FOUND);
-      }
       agency = await this.agencyModel.create({
         userId: user._id,
         name: user.fullName || 'Agency Name',
@@ -115,6 +123,58 @@ export class AgencyService {
         profileCompletionPercentage: 0,
         profileCompletionStatus: 'incomplete',
       });
+    } else {
+      let needsAgencyUpdate = false;
+      const agencyUpdates: Record<string, any> = {};
+
+      if ((!agency.name || agency.name === 'Agency Name') && user.fullName) {
+        agencyUpdates.name = user.fullName;
+        agency.name = user.fullName;
+        needsAgencyUpdate = true;
+      }
+      if (!agency.phoneNumber && user.phoneNumber) {
+        agencyUpdates.phoneNumber = user.phoneNumber;
+        agency.phoneNumber = user.phoneNumber;
+        needsAgencyUpdate = true;
+      }
+      if (!agency.email && user.email) {
+        agencyUpdates.email = user.email;
+        agency.email = user.email;
+        needsAgencyUpdate = true;
+      }
+      if (!agency.address && user.address) {
+        agencyUpdates.address = user.address;
+        agency.address = user.address;
+        needsAgencyUpdate = true;
+      }
+      if (!agency.userId || String(agency.userId) !== String(user._id)) {
+        agencyUpdates.userId = user._id;
+        agency.userId = user._id;
+        needsAgencyUpdate = true;
+      }
+
+      if (needsAgencyUpdate) {
+        await this.agencyModel.findByIdAndUpdate(agency._id, agencyUpdates);
+      }
+
+      let needsUserUpdate = false;
+      const userUpdates: Record<string, any> = {};
+      if (!user.phoneNumber && agency.phoneNumber) {
+        userUpdates.phoneNumber = agency.phoneNumber;
+        needsUserUpdate = true;
+      }
+      if (!user.address && agency.address) {
+        userUpdates.address = agency.address;
+        needsUserUpdate = true;
+      }
+      if (!user.fullName && agency.name) {
+        userUpdates.fullName = agency.name;
+        needsUserUpdate = true;
+      }
+
+      if (needsUserUpdate) {
+        await this.userModel.findByIdAndUpdate(user._id, userUpdates);
+      }
     }
 
     return agency;

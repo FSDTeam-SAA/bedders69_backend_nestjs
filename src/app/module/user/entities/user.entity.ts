@@ -30,6 +30,12 @@ export class User {
   @Prop({ trim: true })
   fullName!: string;
 
+  @Prop({ trim: true })
+  firstName?: string;
+
+  @Prop({ trim: true })
+  lastName?: string;
+
   @Prop({
     required: [true, 'Email is required'],
     unique: true,

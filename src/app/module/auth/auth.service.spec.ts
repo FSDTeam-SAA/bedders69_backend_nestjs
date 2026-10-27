@@ -84,7 +84,7 @@ describe('AuthService', () => {
         buildResponse(),
       ),
     ).rejects.toMatchObject({
-      message: 'Account is not active',
+      message: 'Account is suspended',
     });
   });
 

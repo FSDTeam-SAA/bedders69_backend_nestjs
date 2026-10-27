@@ -126,16 +126,23 @@ export class CompanyService {
   }
 
   async getMyProfile(userId: string) {
-    let company = await this.companyModel.findOne({ userId });
-    if (!company) {
-      const user = await this.userModel.findById(userId);
-      if (!user) {
-        throw new HttpException(
-          'Care company user not found',
-          HttpStatus.NOT_FOUND,
-        );
-      }
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new HttpException(
+        'Care company user not found',
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
+    let company = await this.companyModel.findOne({
+      $or: [
+        { userId: user._id },
+        { userId: String(user._id) },
+        ...(user.email ? [{ email: user.email }] : []),
+      ],
+    });
+
+    if (!company) {
       const baseName = (user.fullName || '').trim() || 'Care Company';
       const existingWithName = await this.companyModel.findOne({
         companyName: baseName,
@@ -155,6 +162,80 @@ export class CompanyService {
         profileCompletionStatus: 'incomplete',
         status: 'pending',
       });
+    } else {
+      let needsCompanyUpdate = false;
+      const companyUpdates: Record<string, any> = {};
+
+      if (
+        (!company.companyName || company.companyName === 'Care Company') &&
+        user.fullName
+      ) {
+        companyUpdates.companyName = user.fullName;
+        company.companyName = user.fullName;
+        needsCompanyUpdate = true;
+      }
+      if (!company.phoneNumber && user.phoneNumber) {
+        companyUpdates.phoneNumber = user.phoneNumber;
+        company.phoneNumber = user.phoneNumber;
+        needsCompanyUpdate = true;
+      }
+      if (!company.email && user.email) {
+        companyUpdates.email = user.email;
+        company.email = user.email;
+        needsCompanyUpdate = true;
+      }
+      if (!company.address && user.address) {
+        companyUpdates.address = user.address;
+        company.address = user.address;
+        needsCompanyUpdate = true;
+      }
+      if (
+        !company.postCode &&
+        (user as unknown as { postCode?: string }).postCode
+      ) {
+        companyUpdates.postCode = (
+          user as unknown as { postCode?: string }
+        ).postCode;
+        company.postCode = (
+          user as unknown as { postCode?: string }
+        ).postCode!;
+        needsCompanyUpdate = true;
+      }
+      if (!company.userId || String(company.userId) !== String(user._id)) {
+        companyUpdates.userId = user._id;
+        company.userId = user._id;
+        needsCompanyUpdate = true;
+      }
+
+      if (needsCompanyUpdate) {
+        await this.companyModel.findByIdAndUpdate(company._id, companyUpdates);
+      }
+
+      let needsUserUpdate = false;
+      const userUpdates: Record<string, any> = {};
+      if (!user.phoneNumber && company.phoneNumber) {
+        userUpdates.phoneNumber = company.phoneNumber;
+        needsUserUpdate = true;
+      }
+      if (
+        !(user as unknown as { postCode?: string }).postCode &&
+        company.postCode
+      ) {
+        userUpdates.postCode = company.postCode;
+        needsUserUpdate = true;
+      }
+      if (!user.address && company.address) {
+        userUpdates.address = company.address;
+        needsUserUpdate = true;
+      }
+      if (!user.fullName && company.companyName) {
+        userUpdates.fullName = company.companyName;
+        needsUserUpdate = true;
+      }
+
+      if (needsUserUpdate) {
+        await this.userModel.findByIdAndUpdate(user._id, userUpdates);
+      }
     }
 
     return company;
@@ -222,6 +303,9 @@ export class CompanyService {
     }
     if (updateCompanyDto.address) {
       linkedUserUpdate.address = updateCompanyDto.address;
+    }
+    if (updateCompanyDto.postCode) {
+      linkedUserUpdate.postCode = updateCompanyDto.postCode;
     }
 
     if (Object.keys(linkedUserUpdate).length) {

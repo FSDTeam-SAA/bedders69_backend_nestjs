@@ -15,6 +15,16 @@ export class CreateAuthDto {
   @IsString()
   fullName!: string;
 
+  @ApiProperty({ required: false, example: 'Saurav' })
+  @IsOptional()
+  @IsString()
+  firstName?: string;
+
+  @ApiProperty({ required: false, example: 'Sarkar' })
+  @IsOptional()
+  @IsString()
+  lastName?: string;
+
   @ApiProperty({ example: 'saurav@example.com' })
   @IsEmail(
     { require_tld: true },

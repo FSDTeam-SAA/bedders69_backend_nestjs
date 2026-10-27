@@ -1,6 +1,9 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Injectable, Optional } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { User, UserDocument, UserStatus } from '../user/entities/user.entity';
+import { Care, CareDocument } from '../care/entities/care.entity';
+import { Company, CompanyDocument } from '../company/entities/company.entity';
+import { Agency, AgencyDocument } from '../agency/entities/agency.entity';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Request, Response } from 'express';
@@ -15,6 +18,15 @@ export class AuthService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly jwtService: jwt.JwtService,
+    @Optional()
+    @InjectModel(Care.name)
+    private readonly careModel?: Model<CareDocument>,
+    @Optional()
+    @InjectModel(Company.name)
+    private readonly companyModel?: Model<CompanyDocument>,
+    @Optional()
+    @InjectModel(Agency.name)
+    private readonly agencyModel?: Model<AgencyDocument>,
   ) {}
 
   private sanitizeUser(user: unknown): Record<string, unknown> {
@@ -86,6 +98,83 @@ export class AuthService {
       ...CreateAuthDto,
       status: defaultStatus,
     });
+
+    try {
+      if (this.careModel && newUser.role === 'carer') {
+        const nameParts = (newUser.fullName || '').trim().split(/\s+/);
+        const firstName =
+          CreateAuthDto.firstName ||
+          (newUser as any).firstName ||
+          nameParts[0] ||
+          '';
+        const lastName =
+          CreateAuthDto.lastName ||
+          (newUser as any).lastName ||
+          nameParts.slice(1).join(' ') ||
+          '';
+        const careName =
+          newUser.fullName ||
+          `${firstName} ${lastName}`.trim() ||
+          'Carer Name';
+
+        await this.careModel.create({
+          userId: newUser._id,
+          careName,
+          firstName,
+          lastName,
+          fullName: careName,
+          email: newUser.email,
+          phoneNumber: newUser.phoneNumber || '',
+          address: newUser.address || '',
+          postCode: (newUser as any).postCode || '',
+          country: (newUser as any).country || 'United Kingdom',
+          region: (newUser as any).city || '',
+          profileCompletionPercentage: 0,
+          profileCompletionStatus: 'incomplete',
+        });
+      } else if (this.companyModel && newUser.role === 'care_company') {
+        const baseName = (newUser.fullName || '').trim() || 'Care Company';
+        const existingWithName = await this.companyModel.findOne({
+          companyName: baseName,
+        });
+        const companyName = existingWithName
+          ? `${baseName} (${String(newUser._id).slice(-4)})`
+          : baseName;
+
+        await this.companyModel.create({
+          userId: newUser._id,
+          companyName,
+          email: newUser.email,
+          phoneNumber: newUser.phoneNumber || '',
+          address: newUser.address || '',
+          postCode: (newUser as any).postCode || '',
+          profileCompletionPercentage: 0,
+          profileCompletionStatus: 'incomplete',
+          status: 'pending',
+        });
+      } else if (this.agencyModel && newUser.role === 'agency') {
+        await this.agencyModel.create({
+          userId: newUser._id,
+          name: newUser.fullName || 'Agency Name',
+          email: newUser.email,
+          phoneNumber: newUser.phoneNumber || '',
+          registerNumber: '',
+          website: '',
+          discription: '',
+          address: newUser.address || '',
+          specialisations: [],
+          documents: [],
+          profileCompletionPercentage: 0,
+          profileCompletionStatus: 'incomplete',
+        });
+      }
+    } catch (profileError) {
+      console.error(
+        'Warning: Pre-provisioning profile during registration encountered an issue:',
+        profileError,
+      );
+    }
+
     return this.sanitizeUser(newUser);
   }
 

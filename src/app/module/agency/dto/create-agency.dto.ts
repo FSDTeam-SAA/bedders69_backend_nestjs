@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsEmail, IsOptional, IsString, IsUrl } from 'class-validator';
+import {
+  IsArray,
+  IsEmail,
+  IsOptional,
+  IsString,
+  IsUrl,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreateAgencyDto {
   @ApiProperty({
@@ -37,25 +44,33 @@ export class CreateAgencyDto {
   @IsString()
   phoneNumber!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'https://abccare.com',
     description: 'Agency website',
   })
-  @IsUrl()
-  website!: string;
+  @IsOptional()
+  @ValidateIf((o) => typeof o.website === 'string' && o.website.trim() !== '')
+  @IsString()
+  website?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'ABC Care Agency provides home care and nursing services.',
     description: 'Agency description',
   })
+  @IsOptional()
   @IsString()
-  discription!: string;
+  discription?: string;
 
   @ApiPropertyOptional({
     example: 'support@abccare.com',
     description: 'Alternative email',
   })
   @IsOptional()
+  @ValidateIf(
+    (o) =>
+      typeof o.alternatageEmail === 'string' &&
+      o.alternatageEmail.trim() !== '',
+  )
   @IsEmail()
   alternatageEmail?: string;
 

@@ -127,7 +127,11 @@ export class AgencyController {
   @ApiNotFoundResponse({ description: 'Agency profile not found' })
   @UseInterceptors(
     FileFieldsInterceptor(
-      [{ name: 'documents', maxCount: 10 }],
+      [
+        { name: 'documents', maxCount: 10 },
+        { name: 'logo', maxCount: 1 },
+        { name: 'banner', maxCount: 1 },
+      ],
       fileUpload.uploadConfig,
     ),
   )
@@ -138,6 +142,8 @@ export class AgencyController {
     @UploadedFiles()
     files?: {
       documents?: Express.Multer.File[];
+      logo?: Express.Multer.File[];
+      banner?: Express.Multer.File[];
     },
   ) {
     const result = await this.agencyService.updateMyProfile(

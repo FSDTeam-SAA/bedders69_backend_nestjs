@@ -152,6 +152,11 @@ export class AuthService {
           (newUser as any).website ||
           '';
 
+        const logo =
+          CreateAuthDto.logoUrl || CreateAuthDto.logo || '';
+        const banner =
+          CreateAuthDto.bannerUrl || CreateAuthDto.coverPhoto || '';
+
         await this.companyModel.create({
           userId: newUser._id,
           companyName,
@@ -161,10 +166,18 @@ export class AuthService {
           postCode: (newUser as any).postCode || '',
           registerNumber: regNum,
           websiteLink: web,
+          logo: logo,
+          coverPhoto: banner,
           profileCompletionPercentage: 0,
           profileCompletionStatus: 'incomplete',
           status: 'pending',
         });
+
+        if (logo) {
+          await this.userModel.findByIdAndUpdate(newUser._id, {
+            profilePicture: logo,
+          });
+        }
       } else if (this.agencyModel && newUser.role === 'agency') {
         const regNum =
           CreateAuthDto.registerNumber ||
@@ -176,6 +189,10 @@ export class AuthService {
           CreateAuthDto.websiteLink ||
           (newUser as any).website ||
           '';
+        const logo =
+          CreateAuthDto.logoUrl || CreateAuthDto.logo || '';
+        const banner =
+          CreateAuthDto.bannerUrl || CreateAuthDto.coverPhoto || '';
 
         await this.agencyModel.create({
           userId: newUser._id,
@@ -186,11 +203,19 @@ export class AuthService {
           website: web,
           discription: '',
           address: newUser.address || '',
+          logoUrl: logo,
+          bannerUrl: banner,
           specialisations: [],
           documents: [],
           profileCompletionPercentage: 0,
           profileCompletionStatus: 'incomplete',
         });
+
+        if (logo) {
+          await this.userModel.findByIdAndUpdate(newUser._id, {
+            profilePicture: logo,
+          });
+        }
       }
     } catch (profileError) {
       console.error(

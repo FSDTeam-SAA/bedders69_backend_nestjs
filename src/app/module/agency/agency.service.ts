@@ -9,6 +9,8 @@ import { Agency, AgencyDocument } from './entities/agency.entity';
 
 type AgencyUploadFiles = {
   documents?: Express.Multer.File[];
+  logo?: Express.Multer.File[];
+  banner?: Express.Multer.File[];
 };
 
 @Injectable()
@@ -157,6 +159,11 @@ export class AgencyService {
         agency.website = (user as any).website;
         needsAgencyUpdate = true;
       }
+      if (!agency.logoUrl && user.profilePicture) {
+        agencyUpdates.logoUrl = user.profilePicture;
+        agency.logoUrl = user.profilePicture;
+        needsAgencyUpdate = true;
+      }
       if (!agency.userId || String(agency.userId) !== String(user._id)) {
         agencyUpdates.userId = user._id;
         agency.userId = user._id;
@@ -189,6 +196,10 @@ export class AgencyService {
         userUpdates.website = agency.website;
         needsUserUpdate = true;
       }
+      if (!user.profilePicture && agency.logoUrl) {
+        userUpdates.profilePicture = agency.logoUrl;
+        needsUserUpdate = true;
+      }
 
       if (needsUserUpdate) {
         await this.userModel.findByIdAndUpdate(user._id, userUpdates);
@@ -210,8 +221,23 @@ export class AgencyService {
       updateAgencyDto.documents = documents;
     }
 
+    const logoFile = files?.logo?.[0];
+    if (logoFile) {
+      const { url } = await fileUpload.uploadToCloudinary(logoFile);
+      updateAgencyDto.logoUrl = url;
+    }
+
+    const bannerFile = files?.banner?.[0];
+    if (bannerFile) {
+      const { url } = await fileUpload.uploadToCloudinary(bannerFile);
+      updateAgencyDto.bannerUrl = url;
+    }
+
     const agencyPayload: UpdateAgencyDto = { ...updateAgencyDto };
     delete agencyPayload.password;
+    if (agencyPayload.alternatageEmail === '') {
+      delete agencyPayload.alternatageEmail;
+    }
 
     const updatedAgency = await this.agencyModel.findOneAndUpdate(
       { userId },
@@ -240,6 +266,9 @@ export class AgencyService {
     }
     if (agencyPayload.website) {
       linkedUserUpdate.website = agencyPayload.website;
+    }
+    if (agencyPayload.logoUrl) {
+      linkedUserUpdate.profilePicture = agencyPayload.logoUrl;
     }
 
     if (Object.keys(linkedUserUpdate).length) {

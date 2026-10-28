@@ -91,6 +91,26 @@ export class CreateAuthDto {
   @IsOptional()
   @IsString()
   websiteLink?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  logoUrl?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  logo?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  bannerUrl?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  coverPhoto?: string;
 }
 
 export class LoginAuthDto {

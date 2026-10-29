@@ -3,10 +3,12 @@ import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
+import { CouponAppliesTo } from '../entities/coupon.entity';
 
 export class CreateCouponDto {
   @ApiProperty({ example: 'Welcome Offer' })
@@ -31,6 +33,21 @@ export class CreateCouponDto {
   @Type(() => Number)
   @IsNumber()
   discountValue!: number;
+
+  @ApiPropertyOptional({
+    enum: CouponAppliesTo,
+    default: CouponAppliesTo.ALL,
+    example: CouponAppliesTo.ALL,
+  })
+  @IsOptional()
+  @IsEnum(CouponAppliesTo)
+  appliesTo?: CouponAppliesTo;
+
+  @ApiPropertyOptional({ example: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  minPurchaseAmount?: number;
 
   @ApiPropertyOptional({ example: true })
   @IsOptional()

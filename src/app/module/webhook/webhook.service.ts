@@ -17,6 +17,7 @@ import {
 import type { Response } from 'express';
 import { NotificationService } from '../notification/notification.service';
 import { MembershipPlan, MembershipPlanDocument } from '../membership-plan/entities/membership-plan.entity';
+import { CouponService } from '../coupon/coupon.service';
 
 @Injectable()
 export class WebhookService {
@@ -41,6 +42,7 @@ export class WebhookService {
     @InjectModel(MembershipPlan.name)
     private readonly membershipPlanModel: Model<MembershipPlanDocument>,
     private readonly notificationService: NotificationService,
+    private readonly couponService: CouponService,
   ) {
     if (config.stripe.secretKey) {
       this.stripe = new Stripe(config.stripe.secretKey);
@@ -227,6 +229,9 @@ export class WebhookService {
     if (plan && !plan.members.some((id) => id.toString() === payment.user.toString())) {
       plan.members.push(payment.user);
       await plan.save();
+    }
+    if (payment.couponCode) {
+      await this.couponService.recordUsage(payment.couponCode);
     }
     await this.notifyPayment(payment, 'payment_succeeded');
     return res.json({ received: true, type: 'membership' });

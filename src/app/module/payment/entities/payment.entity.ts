@@ -23,6 +23,12 @@ export class Payment {
   @Prop()
   amount!: number;
 
+  @Prop()
+  couponCode?: string;
+
+  @Prop({ default: 0 })
+  discountAmount?: number;
+
   @Prop({ default: 'subscription' })
   paymentType!: string;
 

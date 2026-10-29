@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { CouponAppliesTo } from '../../coupon/entities/coupon.entity';
 
 export type CouponDocument = HydratedDocument<Coupon>;
 
@@ -21,6 +22,13 @@ export class Coupon {
 
   @Prop({ required: true })
   discountValue!: number;
+
+  @Prop({
+    type: String,
+    enum: CouponAppliesTo,
+    default: CouponAppliesTo.ALL,
+  })
+  appliesTo!: CouponAppliesTo;
 
   @Prop({ required: true })
   totalUsageLimit!: number;

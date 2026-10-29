@@ -15,10 +15,12 @@ import {
 } from '../entitlement/entities/entitlement.entity';
 import { NotificationModule } from '../notification/notification.module';
 import { MembershipPlan, MembershipPlanSchema } from '../membership-plan/entities/membership-plan.entity';
+import { CouponModule } from '../coupon/coupon.module';
 
 @Module({
   imports: [
     NotificationModule,
+    CouponModule,
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: Payment.name, schema: PaymentSchema },

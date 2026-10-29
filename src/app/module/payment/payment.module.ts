@@ -13,6 +13,7 @@ import {
   MembershipPlan,
   MembershipPlanSchema,
 } from '../membership-plan/entities/membership-plan.entity';
+import { CouponModule } from '../coupon/coupon.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import {
       { name: Package.name, schema: PackageSchema },
       { name: MembershipPlan.name, schema: MembershipPlanSchema },
     ]),
+    CouponModule,
   ],
   controllers: [PaymentController],
   providers: [PaymentService],

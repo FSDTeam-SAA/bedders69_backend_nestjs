@@ -12,6 +12,8 @@ import {
   MembershipPlan,
   MembershipPlanDocument,
 } from '../membership-plan/entities/membership-plan.entity';
+import { CouponService } from '../coupon/coupon.service';
+import { CouponAppliesTo } from '../coupon/entities/coupon.entity';
 import Stripe from 'stripe';
 import config from 'src/app/config';
 import { IFilterParams } from 'src/app/helpers/pick';
@@ -32,6 +34,7 @@ export class PaymentService {
     private readonly packageModel: Model<PackageDocument>,
     @InjectModel(MembershipPlan.name)
     private readonly membershipPlanModel: Model<MembershipPlanDocument>,
+    private readonly couponService: CouponService,
   ) {
     if (config.stripe.secretKey) {
       this.stripe = new Stripe(config.stripe.secretKey);
@@ -299,7 +302,7 @@ export class PaymentService {
     };
   }
 
-  async createMembershipCheckout(userId: string, membershipPlanId: string) {
+  async createMembershipCheckout(userId: string, membershipPlanId: string, couponCode?: string) {
     const stripe = this.getStripeClient();
     const [user, plan] = await Promise.all([
       this.userModel.findById(userId),
@@ -316,7 +319,23 @@ export class PaymentService {
     });
     if (existingPayment) throw new HttpException('You already have this membership plan', 400);
 
+    let finalPrice = plan.price;
+    let discountAmount = 0;
+    let appliedCoupon: any = null;
+
+    if (couponCode && couponCode.trim()) {
+      appliedCoupon = await this.couponService.validateCoupon({
+        couponCode: couponCode.trim(),
+        category: CouponAppliesTo.SUBSCRIPTION,
+        amount: plan.price,
+      });
+      discountAmount = appliedCoupon.totalDiscount || 0;
+      finalPrice = Math.max(0, Math.round((plan.price - discountAmount) * 100) / 100);
+    }
+
     const baseUrl = config.frontendUrl.replace(/\/+$/, '');
+    const unitAmountCents = Math.round(finalPrice * 100);
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: user.email,
@@ -326,13 +345,18 @@ export class PaymentService {
         userId: user._id.toString(),
         membershipPlanId: plan._id.toString(),
         paymentType: 'membership',
+        couponCode: couponCode ? couponCode.trim().toUpperCase() : '',
+        discountAmount: discountAmount.toString(),
       },
       line_items: [{
         quantity: 1,
         price_data: {
           currency: 'gbp',
-          unit_amount: Math.round(plan.price * 100),
-          product_data: { name: plan.title, description: plan.content },
+          unit_amount: unitAmountCents,
+          product_data: {
+            name: `${plan.title}${appliedCoupon ? ` (Coupon: ${appliedCoupon.couponCode})` : ''}`,
+            description: plan.content || undefined,
+          },
         },
       }],
     });
@@ -343,7 +367,9 @@ export class PaymentService {
       {
         user: user._id,
         membershipPlan: plan._id,
-        amount: plan.price,
+        amount: finalPrice,
+        couponCode: couponCode ? couponCode.trim().toUpperCase() : undefined,
+        discountAmount,
         paymentType: 'membership',
         status: 'pending',
         stripeCheckoutSessionId: session.id,
@@ -351,6 +377,12 @@ export class PaymentService {
       { upsert: true, new: true },
     );
 
-    return { checkoutUrl: session.url, checkoutSessionId: session.id };
+    return {
+      checkoutUrl: session.url,
+      checkoutSessionId: session.id,
+      originalPrice: plan.price,
+      finalPrice,
+      discountAmount,
+    };
   }
 }

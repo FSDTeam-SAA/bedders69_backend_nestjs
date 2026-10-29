@@ -10,5 +10,6 @@ import { Coupon, CouponSchema } from './entities/coupon.entity';
   ],
   controllers: [CouponController],
   providers: [CouponService],
+  exports: [CouponService, MongooseModule],
 })
 export class CouponModule {}

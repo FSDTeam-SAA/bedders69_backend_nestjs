@@ -9,6 +9,7 @@ import {
   Min,
 } from 'class-validator';
 import { CouponValidity } from '../entities/coupon.entity';
+import { CouponAppliesTo } from '../../coupon/entities/coupon.entity';
 
 export class CreateDashboardCouponDto {
   @ApiProperty({ example: 'Summer Discount' })
@@ -29,6 +30,15 @@ export class CreateDashboardCouponDto {
   @IsNumber()
   @Min(0)
   discountValue!: number;
+
+  @ApiPropertyOptional({
+    enum: CouponAppliesTo,
+    default: CouponAppliesTo.ALL,
+    example: CouponAppliesTo.ALL,
+  })
+  @IsOptional()
+  @IsEnum(CouponAppliesTo)
+  appliesTo?: CouponAppliesTo;
 
   @ApiProperty({ example: 100 })
   @Type(() => Number)

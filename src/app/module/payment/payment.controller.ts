@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Post,
   Param,
@@ -12,6 +13,7 @@ import { PaymentService } from './payment.service';
 import type { Request } from 'express';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -83,15 +85,19 @@ export class PaymentController {
   @Post('create-membership-checkout/:membershipPlanId')
   @ApiOperation({ summary: 'Create a Stripe Checkout session for a membership plan' })
   @ApiBearerAuth('access-token')
+  @ApiParam({ name: 'membershipPlanId', description: 'Membership plan ID' })
+  @ApiBody({ required: false, schema: { type: 'object', properties: { couponCode: { type: 'string' } } } })
   @UseGuards(AuthGuard(...USER_ROLES))
   @HttpCode(HttpStatus.CREATED)
   async createMembershipCheckout(
     @Req() req: Request,
     @Param('membershipPlanId') membershipPlanId: string,
+    @Body('couponCode') couponCode?: string,
   ) {
     const result = await this.paymentService.createMembershipCheckout(
       req.user!.id,
       membershipPlanId,
+      couponCode,
     );
     return { message: 'Membership checkout created successfully', data: result };
   }

@@ -21,6 +21,7 @@ import AuthGuard from 'src/app/middlewares/auth.guard';
 import { CouponService } from './coupon.service';
 import { CreateCouponDto } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
+import { ValidateCouponDto } from './dto/validate-coupon.dto';
 
 @ApiTags('coupon')
 @Controller('coupons')
@@ -42,6 +43,19 @@ export class CouponController {
     };
   }
 
+  @Post('validate')
+  @ApiOperation({ summary: 'Validate coupon and calculate discounts' })
+  @ApiBody({ type: ValidateCouponDto })
+  @HttpCode(HttpStatus.OK)
+  async validate(@Body() validateCouponDto: ValidateCouponDto) {
+    const result = await this.couponService.validateCoupon(validateCouponDto);
+
+    return {
+      message: 'Coupon validated successfully',
+      data: result,
+    };
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all coupons' })
   async findAll() {
@@ -49,6 +63,18 @@ export class CouponController {
 
     return {
       message: 'Coupons retrieved successfully',
+      data: result,
+    };
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get single coupon by ID' })
+  @ApiParam({ name: 'id', type: String, description: 'Coupon ID' })
+  async findOne(@Param('id') id: string) {
+    const result = await this.couponService.findOne(id);
+
+    return {
+      message: 'Coupon retrieved successfully',
       data: result,
     };
   }
